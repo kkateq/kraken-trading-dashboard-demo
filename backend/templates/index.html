@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Chat</title>
+  </head>
+  <body>
+    <h1>WebSocket Chat</h1>
+    <form action="" onsubmit="sendMessage(event)">
+      <input type="text" id="messageText" autocomplete="off" />
+    </form>
+    <ul id="messages"></ul>
+    <script>
+      var ws = new WebSocket("ws://localhost:8000/ws_orderbook");
+      ws.onmessage = function (event) {
+        console.log("message received");
+        console.log(JSON.parse(event.data));
+      };
+    </script>
+  </body>
+</html>
