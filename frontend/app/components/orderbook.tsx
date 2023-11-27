@@ -29,23 +29,22 @@ export default function Orderbook() {
   }[readyState];
 
   return (
-    <div className="max-h-screen overflow-hidden">
-      <div className="col-span-7 row-span-1 bg-gray-100 p-4">
+    <div className="overflow-hidden h-full">
+      <div className="bg-gray-100 p-2">
         <span className="text-slate-500 text-sm">
           The WebSocket is currently{" "}
           <span className={statusColor}>{connectionStatus}</span>
         </span>
       </div>
-      <div className="grid grid-cols-12 grid-rows-1 h-screen ">
-        <div className="col-span-6 ">
+      <div className="flex h-full">
+        <div className="w-80">
+          <div className="bg-red-100">Order form</div>
           <div className="bg-violet-300">Chart</div>
-          <div className="col-span-7 bg-lime-200">Orders</div>
+          <div className="bg-lime-200">Orders</div>
         </div>
-        <div className="col-span-4 bg-orange-100">
-          {/* {lastMessage?.data && <Book obj={JSON.parse(lastMessage.data)} />} */}
-          Book
+        <div className="w-full">
+          {lastMessage?.data && <Book obj={JSON.parse(lastMessage.data)} />}
         </div>
-        <div className="col-span-2 bg-red-100">Order form</div>
       </div>
     </div>
   );
