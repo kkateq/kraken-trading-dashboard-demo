@@ -8,12 +8,11 @@ from starlette.routing import Route, WebSocketRoute
 from starlette.websockets import WebSocket
 from starlette.templating import Jinja2Templates
 from handlers.orderbook import start_book
-from handlers.manager import get_kraken_manager, Manager
+from handlers.orders import start_orders
+from handlers.manager import get_kraken_manager
 import uvicorn
 from starlette.config import Config
 from starlette.schemas import SchemaGenerator
-from starlette.middleware import Middleware
-from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse
 
 import asyncio
@@ -45,6 +44,14 @@ class OrderBookWebsocketEndpoint(WebSocketEndpoint):
         await start_book(pairs, websocket)
 
 
+class OrdersWebsocketEndpoint(WebSocketEndpoint):
+    encoding = "json"
+
+    async def on_connect(self, websocket: WebSocket) -> None:
+        await websocket.accept()
+        await start_orders(pairs, websocket, config)
+
+
 def openapi_schema(request):
     return schemas.OpenAPIResponse(request=request)
 
@@ -67,12 +74,24 @@ async def list_orders(request):
         return JSONResponse([])
 
 
+async def list_positions(request):
+    global kraken_manager
+    if kraken_manager:
+        positions = kraken_manager.bot.get_open_positions()
+        return JSONResponse(positions)
+    else:
+        print("kraken_manager is not available")
+        return JSONResponse([])
+
+
 if __name__ == "__main__":
     app = Starlette(
         routes=(
             Route("/", homepage, name="hello"),
             WebSocketRoute("/ws_orderbook", OrderBookWebsocketEndpoint),
+            WebSocketRoute("/ws_orders", OrdersWebsocketEndpoint),
             Route("/orders", endpoint=list_orders, methods=["GET"]),
+            Route("/positions", endpoint=list_positions, methods=["GET"]),
             Route("/schema", endpoint=openapi_schema, include_in_schema=False),
         ),
         lifespan=lifespan,
