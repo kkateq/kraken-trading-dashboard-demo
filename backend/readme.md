@@ -12,7 +12,7 @@ pip install -r requirements.txt
 Run the app via `uvicorn` as `uvicorn app:app`
 or
 ```
-python manage.py runserver
+python app.py
 ```
 
 Open browser to http://localhost:8000/
