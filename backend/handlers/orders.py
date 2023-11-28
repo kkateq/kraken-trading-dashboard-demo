@@ -67,10 +67,7 @@ class TradingBot(KrakenSpotWSClientV1):
             "Save exit triggered, reason: {reason}",
             extra={"reason": reason},
         )
-        # some ideas:
-        #   * save the bots data
-        #   * maybe close trades
-        #   * enable dead man's switch
+
         sys.exit(1)
 
 

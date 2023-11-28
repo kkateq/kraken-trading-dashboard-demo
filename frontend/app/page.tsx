@@ -6,11 +6,12 @@ import Trades from "./components/trades";
 export default function Home() {
   return (
     <main className="h-screen w-screen">
-      <div className="bg-white h-full">
+      <div className="bg-white h-full overflow-hidden">
         <div className="overflow-hidden h-full">
           <div className="flex h-full">
-            <div className="w-80">
-              <div className="bg-red-100">Order form</div>
+            <Orderbook />
+
+            <div className="w-full">
               <div className="bg-violet-300">
                 <Trades />
               </div>
@@ -18,7 +19,6 @@ export default function Home() {
                 <Orders />
               </div>
             </div>
-            <div className="w-full">{/* <Orderbook /> */}</div>
           </div>
         </div>
       </div>
