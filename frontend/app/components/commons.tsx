@@ -11,3 +11,7 @@ export const Order = Object.freeze({
 
 export type OrderType = keyof typeof Order;
 export type SideType = keyof typeof Side;
+
+export const Leverage = {
+  "MATIC/USD": 4,
+};

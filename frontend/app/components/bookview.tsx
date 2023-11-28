@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Order, OrderType, Side, SideType } from "./commons";
+import { Order, OrderType, Side, SideType, Leverage } from "./commons";
 import { OrderForm } from "./orderform";
 
 type Price = {
@@ -20,9 +20,17 @@ type Data = {
 };
 type Props = {
   obj: string;
+  addOrder: (
+    ordertype: OrderType,
+    side: SideType,
+    price: number,
+    pair: string,
+    volume: number,
+    leverage: any
+  ) => void;
 };
 
-const Bookview = ({ obj }: Props) => {
+const Bookview = ({ obj, addOrder }: Props) => {
   const [scrolled, setScrolled] = useState(false);
   const pegElement = useRef<HTMLHRElement>(null);
   const [orderAmount, setOrderAmount] = useState<number>(0);
@@ -51,10 +59,6 @@ const Bookview = ({ obj }: Props) => {
   const bidColor = "sky";
   const askColor = "pink";
 
-  const handleCreateOrder = (orderType: OrderType, price: number) => {
-    console.log();
-  };
-
   const getOrderType = (
     side: SideType,
     index: number,
@@ -78,11 +82,32 @@ const Bookview = ({ obj }: Props) => {
 
   const handleBidClick = (index: number, price: number) => {
     const orderType = getOrderType(Side.buy, index, depth);
-    console.log("buy" + "|" + orderType + "|" + price);
+
+    // @ts-ignore
+    const leverage = Leverage[pair];
+    addOrder(
+      orderType as OrderType,
+      Side.buy,
+      price,
+      pair,
+      orderAmount,
+      leverage
+    );
   };
+
   const handleAskClick = (index: number, price: number) => {
     const orderType = getOrderType(Side.sell, index, depth);
-    console.log("sell" + "|" + orderType + "|" + price);
+
+    // @ts-ignore
+    const leverage = Leverage[pair];
+    addOrder(
+      orderType as OrderType,
+      Side.sell,
+      price,
+      pair,
+      orderAmount,
+      leverage
+    );
   };
 
   const handleBuyMarketClick = (price: number) => {

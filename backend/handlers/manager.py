@@ -125,7 +125,7 @@ class TradingBot(KrakenSpotWSClientV1):
             price=price,
             leverage=leverage,
             reduce_only=False,
-            # validate=True,
+            validate=True,
         )
 
     async def on_message(self: TradingBot, message: Union[dict, list]) -> None:

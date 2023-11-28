@@ -1,5 +1,6 @@
 import logging
 import contextlib
+import typing
 from starlette.applications import Starlette
 from starlette.endpoints import WebSocketEndpoint
 
@@ -61,6 +62,36 @@ class TradesWebsocketEndpoint(WebSocketEndpoint):
         await start_trades(pairs, websocket, config)
 
 
+class OperateWebsocketEndpoint(WebSocketEndpoint):
+    encoding = "json"
+
+    async def add_order(self, data) -> None:
+        ordertype = data["ordertype"] if "ordertype" in data else None
+        side = data["side"] if "side" in data else None
+        pair = data["pair"] if "pair" in data else None
+        volume = data["volume"] if "volume" in data else None
+        price = data["price"] if "price" in data else None
+        leverage = data["leverage"] if "leverage" in data else None
+        if all(v is not None for v in [ordertype, side, pair, volume, price, leverage]):
+            res = kraken_manager.bot.add_order(
+                ordertype, side, pair, price, volume, leverage
+            )
+            return JSONResponse(res)
+        else:
+            logging.info("Not all arguments specified for order creation.")
+
+    async def on_connect(self, websocket: WebSocket) -> None:
+        await websocket.accept()
+
+    async def on_receive(self, websocket: WebSocket, data) -> None:
+        if kraken_manager:
+            operation = data["operation"]
+            if operation and operation == "add_order":
+                await self.add_order(data)
+
+            return JSONResponse([])
+
+
 def openapi_schema(request):
     return schemas.OpenAPIResponse(request=request)
 
@@ -100,6 +131,7 @@ if __name__ == "__main__":
             WebSocketRoute("/ws_orderbook", OrderBookWebsocketEndpoint),
             WebSocketRoute("/ws_orders", OrdersWebsocketEndpoint),
             WebSocketRoute("/ws_trades", OrdersWebsocketEndpoint),
+            WebSocketRoute("/ws_create", OperateWebsocketEndpoint),
             Route("/orders", endpoint=list_orders, methods=["GET"]),
             Route("/positions", endpoint=list_positions, methods=["GET"]),
             Route("/schema", endpoint=openapi_schema, include_in_schema=False),
