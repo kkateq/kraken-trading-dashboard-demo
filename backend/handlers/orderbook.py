@@ -5,7 +5,7 @@ import json
 order_book_websocket = None
 
 
-def transform_book(book, depth):
+def transform_book(book, depth, pair):
     bids = [(float(i[0]), float(i[1][0])) for i in list(book["bid"].items())]
     asks = [(float(j[0]), float(j[1][0])) for j in list(book["ask"].items())]
     bid_volume = [round(j) for _, j in bids]
@@ -41,25 +41,26 @@ def transform_book(book, depth):
         "bid_volume_total": bid_volume_total,
         "ask_volume_total_percentage": asks_total_percentage,
         "bids_volume_total_percentage": bids_total_percentage,
+        "pair": pair,
     }
 
 
 class Orderbook(OrderbookClientV2):
     async def on_book_update(self, pair, message) -> None:
         book = self.get(pair=pair)
-        book_ts = transform_book(book, depth=self.depth)
+        book_ts = transform_book(book, depth=self.depth, pair=pair)
         if book_ts and order_book_websocket:
             await order_book_websocket.send_json(json.dumps(book_ts))
 
 
-async def start_book(ws, depth=100) -> None:
+async def start_book(pairs, ws, depth=25) -> None:
     global order_book_websocket
     order_book_websocket = ws
     orderbook = Orderbook(depth=depth)
     print("created orderbook")
 
     await orderbook.add_book(
-        pairs=["MATIC/USD"],  # we can also subscribe to more currency pairs
+        pairs=pairs  # we can also subscribe to more currency pairs
     )
 
     while not orderbook.exception_occur:

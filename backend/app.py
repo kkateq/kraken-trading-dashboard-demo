@@ -8,13 +8,19 @@ from starlette.routing import Route, WebSocketRoute
 from starlette.websockets import WebSocket
 from starlette.templating import Jinja2Templates
 from handlers.orderbook import start_book
+from handlers.orders import start_orders
 import uvicorn
+from starlette.config import Config
 
 # from starlette.middleware.cors import CORSMiddleware
 
 logger = logging.getLogger(__name__)
 
 templates = Jinja2Templates("templates")
+config = Config(".env")
+
+
+pairs = ["MATIC/USD"]
 
 
 async def homepage(request):
@@ -28,7 +34,18 @@ class OrderBookWebsocketEndpoint(WebSocketEndpoint):
 
     async def on_connect(self, websocket: WebSocket) -> None:
         await websocket.accept()
-        await start_book(websocket)
+        await start_book(pairs, websocket)
+
+    # async def on_receive(self, websocket, data):
+    #     await websocket.send_text(f"Message text was: {data}")
+
+
+class OrdersWebsocketEndpoint(WebSocketEndpoint):
+    encoding = "json"
+
+    async def on_connect(self, websocket: WebSocket) -> None:
+        await websocket.accept()
+        await start_orders(pairs, websocket, config)
 
     # async def on_receive(self, websocket, data):
     #     await websocket.send_text(f"Message text was: {data}")
@@ -50,6 +67,7 @@ app = Starlette(
     routes=(
         Route("/", homepage, name="hello"),
         WebSocketRoute("/ws_orderbook", OrderBookWebsocketEndpoint),
+        WebSocketRoute("/ws_orders", OrdersWebsocketEndpoint),
     ),
     debug=True,
 )
