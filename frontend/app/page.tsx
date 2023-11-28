@@ -5,8 +5,8 @@ import Trades from "./components/trades";
 
 export default function Home() {
   return (
-    <main className="h-screen w-screen">
-      <div className="bg-white h-full overflow-hidden">
+    <main className="h-screen w-screen bg-gray-200">
+      <div className="h-full overflow-hidden">
         <div className="overflow-hidden h-full">
           <div className="flex h-full">
             <Orderbook />

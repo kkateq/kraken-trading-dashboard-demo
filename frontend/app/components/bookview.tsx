@@ -12,6 +12,7 @@ type Price = {
 type Data = {
   depth: number;
   data: [Price];
+  pair: string;
   ask_volume_total: number;
   bid_volume_total: number;
   ask_volume_total_percentage: number;
@@ -39,6 +40,7 @@ const Bookview = ({ obj }: Props) => {
   }
   const {
     data,
+    pair,
     depth,
     ask_volume_total,
     bid_volume_total,
@@ -101,22 +103,22 @@ const Bookview = ({ obj }: Props) => {
   };
 
   return (
-    <div className="flex" style={{ height: "90vh" }}>
-      <div className="" style={{ width: "350px" }}>
+    <div className="flex rounded text-sm" style={{ height: "90vh" }}>
+      <div className="" style={{ width: "400px" }}>
         <div className="space-x-2 mt-1 mb-3 flex">
-          <span className={`text-${bidColor}-800`}>
+          <div className="bold mr-4">{pair}</div>
+          <span className={`w-full text-${bidColor}-800`}>
             {bid_volume_total}({bids_volume_total_percentage}%)
           </span>
-          <div className="w-full" />
-          <span className={`text-${askColor}-800`}>
+          <span className={`w-full  text-${askColor}-800`}>
             {ask_volume_total}({ask_volume_total_percentage})%
           </span>
         </div>
-        <div className=" overflow-hidden flex flex-col h-full border-solid border-2 border-gray-300 p-1">
-          <div className="overflow-auto">
+        <div className="bg-white overflow-hidden flex flex-col h-full border-solid border-2 rounded border-gray-400 p-1">
+          <div className="overflow-auto divide-y">
             {data.map((x: Price, i) => (
-              <div key={i} className="">
-                <div className="border-1 flex space-x-4 ">
+              <div key={i} className="divide-y">
+                <div className="border-1 flex space-x-2 divide-x">
                   <div
                     className={
                       i < depth
@@ -142,7 +144,7 @@ const Bookview = ({ obj }: Props) => {
                   </div>
                 </div>
                 {i === depth - 1 ? (
-                  <div className="border-1 flex space-x-4 ">
+                  <div className="border-1 flex space-x-2">
                     <div
                       className="p-3 flex-1 pr-2 text-right text-sky-800 cursor-pointer hover:bg-sky-600"
                       onClick={() => handleBuyMarketClick(x.price)}
