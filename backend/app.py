@@ -9,6 +9,7 @@ from starlette.websockets import WebSocket
 from starlette.templating import Jinja2Templates
 from handlers.orderbook import start_book
 from handlers.orders import start_orders
+from handlers.trades import start_trades
 from handlers.manager import get_kraken_manager
 import uvicorn
 from starlette.config import Config
@@ -52,6 +53,14 @@ class OrdersWebsocketEndpoint(WebSocketEndpoint):
         await start_orders(pairs, websocket, config)
 
 
+class TradesWebsocketEndpoint(WebSocketEndpoint):
+    encoding = "json"
+
+    async def on_connect(self, websocket: WebSocket) -> None:
+        await websocket.accept()
+        await start_trades(pairs, websocket, config)
+
+
 def openapi_schema(request):
     return schemas.OpenAPIResponse(request=request)
 
@@ -90,6 +99,7 @@ if __name__ == "__main__":
             Route("/", homepage, name="hello"),
             WebSocketRoute("/ws_orderbook", OrderBookWebsocketEndpoint),
             WebSocketRoute("/ws_orders", OrdersWebsocketEndpoint),
+            WebSocketRoute("/ws_trades", OrdersWebsocketEndpoint),
             Route("/orders", endpoint=list_orders, methods=["GET"]),
             Route("/positions", endpoint=list_positions, methods=["GET"]),
             Route("/schema", endpoint=openapi_schema, include_in_schema=False),
