@@ -1,15 +1,7 @@
 "use client";
 
-import { useRef, useState, useEffect } from "react";
-import {
-  Order,
-  OrderType,
-  Side,
-  SideType,
-  Leverage,
-  DefaultVolume,
-} from "./commons";
-import { OrderForm } from "./orderform";
+import { useRef, useState } from "react";
+import { Order, OrderType, Side, SideType, Leverage } from "./commons";
 
 type Price = {
   price: number;
@@ -27,7 +19,8 @@ type Data = {
   peg_price: number;
 };
 type Props = {
-  obj: string;
+  book: Data;
+  orderAmount: number;
   addOrder: (
     ordertype: OrderType,
     side: SideType,
@@ -39,23 +32,11 @@ type Props = {
   ) => void;
 };
 
-const Bookview = ({ obj, addOrder }: Props) => {
+const Bookview = ({ book, addOrder, orderAmount }: Props) => {
   const [scrolled, setScrolled] = useState(false);
   const pegElement = useRef<HTMLHRElement>(null);
-  const [orderAmount, setOrderAmount] = useState<number>(0);
-  const [scaleInOut, setScaleInOut] = useState<boolean>(true);
-  const [done, setDone] = useState(false);
 
-  useEffect(() => {
-    const payload = JSON.parse(obj);
-    if (payload && payload.pair && !done) {
-      // @ts-ignore
-      setOrderAmount(DefaultVolume[payload.pair]);
-      setDone(true);
-    }
-  }, [done, obj]);
-
-  if (!obj) {
+  if (!book) {
     return null;
   }
   const {
@@ -67,7 +48,7 @@ const Bookview = ({ obj, addOrder }: Props) => {
     ask_volume_total_percentage,
     bids_volume_total_percentage,
     peg_price,
-  }: Data = JSON.parse(obj);
+  }: Data = book;
 
   const bidColor = "sky";
   const askColor = "pink";
@@ -141,18 +122,10 @@ const Bookview = ({ obj, addOrder }: Props) => {
     console.log("sell" + "|" + orderType + "|" + price);
   };
 
-  const handleChangeOrderAmount = (newAmount: number) => {
-    setOrderAmount(newAmount);
-  };
-
-  const handleScaleInOut = (newValue: boolean) => {
-    setScaleInOut(newValue);
-  };
-
   return (
-    <div className="flex rounded text-sm" style={{ height: "100vh" }}>
-      <div className="flex flex-col" style={{ width: "350px" }}>
-        <div className="space-x-2 mt-1 mb-1 flex">
+    <div className="flex rounded text-sm" style={{ height: "95vh" }}>
+      <div className="ml-2" style={{ width: "400px" }}>
+        <div className="space-x-1 mt-1 flex">
           <div className="bold mr-4">{pair}</div>
           <span className={`w-full text-${bidColor}-800`}>
             {bid_volume_total}({bids_volume_total_percentage}%)
@@ -161,19 +134,6 @@ const Bookview = ({ obj, addOrder }: Props) => {
             {ask_volume_total}({ask_volume_total_percentage})%
           </span>
         </div>
-        <div className="mt-2 text-xs">
-          <h2 className="text-gray-600">Order book depth {depth}</h2>
-        </div>
-
-        <OrderForm
-          orderAmount={orderAmount}
-          onChangeOrderAmount={handleChangeOrderAmount}
-          scaleInOut={scaleInOut}
-          onChangeScaleInOut={handleScaleInOut}
-          pegPrice={peg_price}
-        />
-      </div>
-      <div className="ml-2" style={{ width: "400px" }}>
         <div className="bg-white overflow-hidden flex flex-col h-full border-solid border-2 rounded border-gray-400 p-1">
           <div className="overflow-auto divide-y">
             {data.map((x: Price, i) => (
@@ -219,6 +179,9 @@ const Bookview = ({ obj, addOrder }: Props) => {
               </div>
             ))}
           </div>
+        </div>
+        <div className="mt-2 text-xs">
+          <h2 className="text-gray-600 mb-1">Order book depth {depth}</h2>
         </div>
       </div>
     </div>

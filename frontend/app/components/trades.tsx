@@ -1,5 +1,3 @@
-// "use client";
-
 import { useState, useEffect } from "react";
 export default function Trades() {
   const [trades, setTrades] = useState([]);
@@ -9,7 +7,6 @@ export default function Trades() {
       .then((response) => response.json())
       .then((data) => {
         setTrades(data);
-        console.log(data);
       })
       .catch((err) => {
         console.log(err.message);
@@ -23,8 +20,11 @@ export default function Trades() {
   const round = (v: number) => Math.round(v * 100) / 100;
 
   return (
-    <div className="flex flex-col overflow-auto h-full bg-gray-200 border-2 rounded border-gray-400 p-2 m-1">
+    <div className="flex flex-col overflow-auto h-full bg-gray-200 border-2 rounded border-blue-400 p-2">
       <div>
+        <h5 className="text-xs text-gray-400 bold text-center mb-1">
+          POSITIONS
+        </h5>
         <table className="w-full min-w-max table-auto text-left text-sm ">
           <thead className="">
             <tr>
