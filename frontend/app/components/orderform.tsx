@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Order, OrderType } from "./commons";
 import { Slider } from "@material-tailwind/react";
 
@@ -7,15 +7,18 @@ type Props = {
   scaleInOut: boolean;
   onChangeOrderAmount: (newValue: number) => void;
   onChangeScaleInOut: (newValue: boolean) => void;
+  pegPrice: number;
 };
 export const OrderForm = ({
   orderAmount,
   onChangeOrderAmount,
   scaleInOut,
   onChangeScaleInOut,
+  pegPrice,
 }: Props) => {
   const [orderType, setOrderType] = useState<OrderType>();
   const [simpleForm, setSimpleForm] = useState<boolean>(true);
+  const [total, setTotal] = useState(0);
 
   const handleOrderTypeSelection = (
     e: React.ChangeEvent<HTMLSelectElement>
@@ -52,6 +55,10 @@ export const OrderForm = ({
     onChangeOrderAmount(e.target.value as any);
   };
 
+  useEffect(() => {
+    setTotal(Math.round(orderAmount * pegPrice * 10000) / 10000);
+  }, [orderAmount, pegPrice]);
+
   return (
     <div className="mt-2 border-solid border-2 border-gray-400 rounded p-2 bg-white">
       <h4 className="mb-2 text-gray-500">Order settings</h4>
@@ -69,10 +76,13 @@ export const OrderForm = ({
           <Slider
             color="green"
             size="md"
-            defaultValue={50}
+            value={orderAmount}
             onChange={handleVolumeChange}
             step={0.001}
           />
+        </div>
+        <div>
+          <span className="bold text-green-700 text-lg">$ {total}</span>
         </div>
 
         {!simpleForm && (

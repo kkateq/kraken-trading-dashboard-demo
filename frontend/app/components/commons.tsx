@@ -20,6 +20,10 @@ export const Leverage = {
   "MATIC/USD": 4,
 };
 
+export const DefaultVolume = {
+  "MATIC/USD": 40,
+};
+
 export enum LogLevel {
   INFO = 0,
   WARNING = 1,

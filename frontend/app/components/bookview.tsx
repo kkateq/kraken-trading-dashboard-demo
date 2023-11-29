@@ -1,7 +1,14 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { Order, OrderType, Side, SideType, Leverage } from "./commons";
+import { useRef, useState, useEffect } from "react";
+import {
+  Order,
+  OrderType,
+  Side,
+  SideType,
+  Leverage,
+  DefaultVolume,
+} from "./commons";
 import { OrderForm } from "./orderform";
 
 type Price = {
@@ -17,6 +24,7 @@ type Data = {
   bid_volume_total: number;
   ask_volume_total_percentage: number;
   bids_volume_total_percentage: number;
+  peg_price: number;
 };
 type Props = {
   obj: string;
@@ -36,15 +44,25 @@ const Bookview = ({ obj, addOrder }: Props) => {
   const pegElement = useRef<HTMLHRElement>(null);
   const [orderAmount, setOrderAmount] = useState<number>(0);
   const [scaleInOut, setScaleInOut] = useState<boolean>(true);
+  const [done, setDone] = useState(false);
+  const [payload, setPayload] = useState<Data>();
 
-  // useEffect(() => {
-  //   if (pegElement?.current && !scrolled) {
-  //     pegElement?.current.scrollIntoView();
-  //     setScrolled(true);
-  //   }
-  // }, [pegElement, scrolled]);
+  useEffect(() => {
+    if (obj) {
+      const parsed = JSON.parse(obj);
+      setPayload(parsed);
+    }
+  }, [obj]);
 
-  if (!obj) {
+  useEffect(() => {
+    if (payload && payload.pair && !done) {
+      // @ts-ignore
+      setOrderAmount(DefaultVolume[payload.pair]);
+      setDone(true);
+    }
+  }, [done, payload]);
+
+  if (!payload) {
     return null;
   }
   const {
@@ -55,7 +73,8 @@ const Bookview = ({ obj, addOrder }: Props) => {
     bid_volume_total,
     ask_volume_total_percentage,
     bids_volume_total_percentage,
-  }: Data = JSON.parse(obj);
+    peg_price,
+  }: Data = payload;
 
   const bidColor = "sky";
   const askColor = "pink";
@@ -156,6 +175,7 @@ const Bookview = ({ obj, addOrder }: Props) => {
           onChangeOrderAmount={handleChangeOrderAmount}
           scaleInOut={scaleInOut}
           onChangeScaleInOut={handleScaleInOut}
+          pegPrice={peg_price}
         />
       </div>
       <div className="ml-2" style={{ width: "400px" }}>

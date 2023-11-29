@@ -12,6 +12,7 @@ def transform_book(book, depth, pair):
     ask_volume = [round(j) for _, j in asks]
     bid_price = [i for i, _ in bids]
     ask_price = [i for i, _ in asks]
+    peg_price = (bid_price[0] + ask_price[0]) / 2
     ask_volume.reverse()
     ask_price.reverse()
 
@@ -42,6 +43,7 @@ def transform_book(book, depth, pair):
         "ask_volume_total_percentage": asks_total_percentage,
         "bids_volume_total_percentage": bids_total_percentage,
         "pair": pair,
+        "peg_price": peg_price,
     }
 
 
