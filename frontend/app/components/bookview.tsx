@@ -45,24 +45,17 @@ const Bookview = ({ obj, addOrder }: Props) => {
   const [orderAmount, setOrderAmount] = useState<number>(0);
   const [scaleInOut, setScaleInOut] = useState<boolean>(true);
   const [done, setDone] = useState(false);
-  const [payload, setPayload] = useState<Data>();
 
   useEffect(() => {
-    if (obj) {
-      const parsed = JSON.parse(obj);
-      setPayload(parsed);
-    }
-  }, [obj]);
-
-  useEffect(() => {
+    const payload = JSON.parse(obj);
     if (payload && payload.pair && !done) {
       // @ts-ignore
       setOrderAmount(DefaultVolume[payload.pair]);
       setDone(true);
     }
-  }, [done, payload]);
+  }, [done, obj]);
 
-  if (!payload) {
+  if (!obj) {
     return null;
   }
   const {
@@ -74,7 +67,7 @@ const Bookview = ({ obj, addOrder }: Props) => {
     ask_volume_total_percentage,
     bids_volume_total_percentage,
     peg_price,
-  }: Data = payload;
+  }: Data = JSON.parse(obj);
 
   const bidColor = "sky";
   const askColor = "pink";
@@ -109,15 +102,17 @@ const Bookview = ({ obj, addOrder }: Props) => {
     // @ts-ignore
     const leverage = Leverage[pair];
     const reduceOnly = orderType === Order.stop;
-    addOrder(
-      orderType as OrderType,
-      Side.buy,
-      price,
-      pair,
-      orderAmount,
-      leverage,
-      reduceOnly
-    );
+    if (!reduceOnly) {
+      addOrder(
+        orderType as OrderType,
+        Side.buy,
+        price,
+        pair,
+        orderAmount,
+        leverage,
+        reduceOnly
+      );
+    }
   };
 
   const handleAskClick = (index: number, price: number) => {

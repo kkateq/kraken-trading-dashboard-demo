@@ -53,16 +53,16 @@ export default function Orderbook({ addMessage }: Props) {
 
   return (
     <div className="flex">
-      <div>
-        <WsStatusIcon readyState={orderBookReadyState} />
-        <WsStatusIcon readyState={readyState} />
-      </div>
       {orderBookLastMessage?.data && (
         <Book
           obj={JSON.parse(orderBookLastMessage?.data)}
           addOrder={addOrder}
         />
       )}
+      <div>
+        <WsStatusIcon readyState={orderBookReadyState} />
+        <WsStatusIcon readyState={readyState} />
+      </div>
     </div>
   );
 }

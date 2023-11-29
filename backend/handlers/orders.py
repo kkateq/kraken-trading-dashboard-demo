@@ -79,36 +79,14 @@ class Manager:
     async def run(self: Manager) -> None:
         """Starts the event loop and bot"""
         if not self.__check_credentials():
+            logging.error("Invalid API credentials")
             sys.exit(1)
 
         try:
-            await self.__main()
+            self.__trading_strategy = TradingBot(config=self.__config)
+            await self.__trading_strategy.subscribe(subscription={"name": "openOrders"})
         except KeyboardInterrupt:
             self.save_exit(reason="KeyboardInterrupt")
-        else:
-            self.save_exit(reason="Asyncio loop left")
-
-    async def __main(self: Manager) -> None:
-        self.__trading_strategy = TradingBot(config=self.__config)
-
-        await self.__trading_strategy.subscribe(subscription={"name": "openOrders"})
-
-        while not self.__trading_strategy.exception_occur:
-            try:
-                # check if the algorithm feels good
-                # maybe send a status update every day via Telegram or Mail
-                # ..…
-                pass
-
-            except Exception as exc:
-                message: str = f"Exception in main: {exc} {traceback.format_exc()}"
-                logging.error(message)
-                self.__trading_strategy.save_exit(reason=message)
-
-            await asyncio.sleep(6)
-        self.__trading_strategy.save_exit(
-            reason="Left main loop because of exception in strategy.",
-        )
 
     def __check_credentials(self: Manager) -> bool:
         """Checks the user credentials and the connection to Kraken"""

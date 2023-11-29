@@ -5,7 +5,7 @@ from starlette.applications import Starlette
 from starlette.endpoints import WebSocketEndpoint
 
 from starlette.routing import Route, WebSocketRoute
-
+from starlette.middleware import Middleware
 from starlette.websockets import WebSocket
 from starlette.templating import Jinja2Templates
 from handlers.orderbook import start_book
@@ -17,7 +17,7 @@ from starlette.config import Config
 from starlette.schemas import SchemaGenerator
 from starlette.responses import JSONResponse
 
-import asyncio
+from starlette.middleware.cors import CORSMiddleware
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -114,7 +114,7 @@ async def lifespan(app):
 
 async def list_orders(request):
     global kraken_manager
-    if kraken_manager:
+    if kraken_manager and kraken_manager.bot:
         orders = kraken_manager.bot.get_open_orders()
         return JSONResponse(orders)
     else:
@@ -124,7 +124,7 @@ async def list_orders(request):
 
 async def list_positions(request):
     global kraken_manager
-    if kraken_manager:
+    if kraken_manager and kraken_manager.bot:
         positions = kraken_manager.bot.get_open_positions()
         return JSONResponse(positions)
     else:
@@ -144,6 +144,7 @@ if __name__ == "__main__":
             Route("/positions", endpoint=list_positions, methods=["GET"]),
             Route("/schema", endpoint=openapi_schema, include_in_schema=False),
         ),
+        middleware=[Middleware(CORSMiddleware, allow_origins=["*"])],
         lifespan=lifespan,
         debug=True,
     )
