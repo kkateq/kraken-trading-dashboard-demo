@@ -52,7 +52,7 @@ export default function Orderbook({ addMessage }: Props) {
   }, [lastMessage, addMessage]);
 
   return (
-    <div className="flex p-2">
+    <div className="flex">
       <div>
         <WsStatusIcon readyState={orderBookReadyState} />
         <WsStatusIcon readyState={readyState} />

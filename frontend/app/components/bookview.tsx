@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { Order, OrderType, Side, SideType, Leverage } from "./commons";
 import { OrderForm } from "./orderform";
 
@@ -136,9 +136,9 @@ const Bookview = ({ obj, addOrder }: Props) => {
   };
 
   return (
-    <div className="flex rounded text-sm" style={{ height: "90vh" }}>
-      <div className="" style={{ width: "400px" }}>
-        <div className="space-x-2 mt-1 mb-3 flex">
+    <div className="flex rounded text-sm" style={{ height: "100vh" }}>
+      <div className="flex flex-col" style={{ width: "350px" }}>
+        <div className="space-x-2 mt-1 mb-1 flex">
           <div className="bold mr-4">{pair}</div>
           <span className={`w-full text-${bidColor}-800`}>
             {bid_volume_total}({bids_volume_total_percentage}%)
@@ -147,6 +147,18 @@ const Bookview = ({ obj, addOrder }: Props) => {
             {ask_volume_total}({ask_volume_total_percentage})%
           </span>
         </div>
+        <div className="mt-2 text-xs">
+          <h2 className="text-gray-600">Order book depth {depth}</h2>
+        </div>
+
+        <OrderForm
+          orderAmount={orderAmount}
+          onChangeOrderAmount={handleChangeOrderAmount}
+          scaleInOut={scaleInOut}
+          onChangeScaleInOut={handleScaleInOut}
+        />
+      </div>
+      <div className="ml-2" style={{ width: "400px" }}>
         <div className="bg-white overflow-hidden flex flex-col h-full border-solid border-2 rounded border-gray-400 p-1">
           <div className="overflow-auto divide-y">
             {data.map((x: Price, i) => (
@@ -193,18 +205,6 @@ const Bookview = ({ obj, addOrder }: Props) => {
             ))}
           </div>
         </div>
-
-        <div className="mt-2">
-          <h2 className="text-gray-600">Order book depth {depth}</h2>
-        </div>
-      </div>
-      <div>
-        <OrderForm
-          orderAmount={orderAmount}
-          onChangeOrderAmount={handleChangeOrderAmount}
-          scaleInOut={scaleInOut}
-          onChangeScaleInOut={handleScaleInOut}
-        />
       </div>
     </div>
   );

@@ -23,20 +23,23 @@ export default function Home() {
     <main className="h-screen w-screen bg-gray-200">
       <div className="h-full overflow-hidden">
         <div className="overflow-hidden h-full">
-          <div className="flex h-full">
-            <Orderbook addMessage={addMessage} />
-
-            <div className="w-full flex flex-col space-y-2">
-              <div className="bg-violet-300">
-                <Trades />
+          <div className="flex">
+            <div style={{ minWidth: "400px" }} className="flex">
+              <div className="grid grid-rows-4 gap-2 w-full">
+                <div className="row-span-2">
+                  <Trades />
+                </div>
+                <div className="row-span-2">
+                  <Orders />
+                </div>
+                <div className="rows-span-1 m-1">
+                  {/* @ts-ignore */}
+                  <MessageLog messages={messages} />
+                </div>
               </div>
-              <div className="bg-lime-200">
-                <Orders />
-              </div>
-              <div className="">
-                {/* @ts-ignore */}
-                <MessageLog messages={messages} />
-              </div>
+            </div>
+            <div className="w-full">
+              <Orderbook addMessage={addMessage} />
             </div>
           </div>
         </div>

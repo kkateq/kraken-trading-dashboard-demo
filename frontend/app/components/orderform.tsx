@@ -14,6 +14,7 @@ export const OrderForm = ({
   onChangeScaleInOut,
 }: Props) => {
   const [orderType, setOrderType] = useState<OrderType>();
+  const [simpleForm, setSimpleForm] = useState(true);
 
   const handleOrderTypeSelection = (
     e: React.ChangeEvent<HTMLSelectElement>
@@ -42,7 +43,7 @@ export const OrderForm = ({
     console.log("flatten");
   };
   return (
-    <div className="m-3 border-solid border-2 border-gray-400 rounded p-2 bg-white">
+    <div className="mt-2 border-solid border-2 border-gray-400 rounded p-2 bg-white">
       <h4 className="mb-2 text-gray-500">Order settings</h4>
       <div className="border-b border-gray-900/10 pb-12 grid space-y-3">
         <input
