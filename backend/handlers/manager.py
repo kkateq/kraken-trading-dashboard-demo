@@ -116,7 +116,8 @@ class TradingBot(KrakenSpotWSClientV1):
                 logging.info(res)
             return res
 
-    def add_order(self, ordertype, side, pair, price, volume, leverage):
+    def add_order(self, ordertype, side, pair, price, volume, leverage, reduce_only):
+        logging.info("Adding order...")
         return self.__trade.create_order(
             ordertype=ordertype,
             side=side,
@@ -124,7 +125,7 @@ class TradingBot(KrakenSpotWSClientV1):
             volume=volume,
             price=price,
             leverage=leverage,
-            reduce_only=False,
+            reduce_only=reduce_only,
             validate=True,
         )
 

@@ -1,6 +1,6 @@
 import logging
 import contextlib
-import typing
+import json
 from starlette.applications import Starlette
 from starlette.endpoints import WebSocketEndpoint
 
@@ -19,7 +19,8 @@ from starlette.responses import JSONResponse
 
 import asyncio
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
 
 templates = Jinja2Templates("templates")
 config = Config(".env")
@@ -72,13 +73,14 @@ class OperateWebsocketEndpoint(WebSocketEndpoint):
         volume = data["volume"] if "volume" in data else None
         price = data["price"] if "price" in data else None
         leverage = data["leverage"] if "leverage" in data else None
+        reduce_only = data["reduce_only"] if "reduce_only" in data else None
         if all(v is not None for v in [ordertype, side, pair, volume, price, leverage]):
             res = kraken_manager.bot.add_order(
-                ordertype, side, pair, price, volume, leverage
+                ordertype, side, pair, price, volume, leverage, reduce_only
             )
             return JSONResponse(res)
         else:
-            logging.info("Not all arguments specified for order creation.")
+            logging.error("Not all arguments specified for order creation.")
 
     async def on_connect(self, websocket: WebSocket) -> None:
         await websocket.accept()
@@ -87,9 +89,15 @@ class OperateWebsocketEndpoint(WebSocketEndpoint):
         if kraken_manager:
             operation = data["operation"]
             if operation and operation == "add_order":
-                await self.add_order(data)
-
-            return JSONResponse([])
+                logging.info("Operation add_order executed.")
+                res = await self.add_order(data)
+                if res:
+                    body = json.loads(res.body)
+                    await websocket.send_json(body)
+                else:
+                    logger.warning(
+                        "No response received after {} execution".format(operation)
+                    )
 
 
 def openapi_schema(request):

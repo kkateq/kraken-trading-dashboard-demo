@@ -1,12 +1,16 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import useWebSocket, { ReadyState } from "react-use-websocket";
-import { OrderType, SideType } from "./commons";
+import { OrderType, SideType, LogLevel } from "./commons";
 import Book from "./bookview";
 import WsStatusIcon from "./wsstatusicon";
 
-export default function Orderbook() {
+type Props = {
+  addMessage?: (text: string, level: LogLevel) => void;
+};
+
+export default function Orderbook({ addMessage }: Props) {
   const [orderBookSocketUrl] = useState("ws://localhost:8000/ws_orderbook");
   const { lastMessage: orderBookLastMessage, readyState: orderBookReadyState } =
     useWebSocket(orderBookSocketUrl);
@@ -21,8 +25,10 @@ export default function Orderbook() {
       price: number,
       pair: string,
       volume: number,
-      leverage: number
+      leverage: number,
+      reduce_only: boolean
     ) => {
+      console.log("Sending add order message");
       sendMessage(
         JSON.stringify({
           operation: "add_order",
@@ -32,11 +38,19 @@ export default function Orderbook() {
           pair,
           volume,
           leverage,
+          reduce_only,
         })
       );
     },
     [sendMessage]
   );
+
+  // useEffect(() => {
+  //   if (lastMessage !== null) {
+  //     addMessage(lastMessage.data, LogLevel.INFO);
+  //   }
+  // }, [addMessage, lastMessage]);
+
   return (
     <div className="flex p-2">
       <div>

@@ -26,7 +26,8 @@ type Props = {
     price: number,
     pair: string,
     volume: number,
-    leverage: any
+    leverage: any,
+    reduce_only: boolean
   ) => void;
 };
 
@@ -36,12 +37,12 @@ const Bookview = ({ obj, addOrder }: Props) => {
   const [orderAmount, setOrderAmount] = useState<number>(0);
   const [scaleInOut, setScaleInOut] = useState<boolean>(true);
 
-  useEffect(() => {
-    if (pegElement?.current && !scrolled) {
-      pegElement?.current.scrollIntoView();
-      setScrolled(true);
-    }
-  }, [pegElement, scrolled]);
+  // useEffect(() => {
+  //   if (pegElement?.current && !scrolled) {
+  //     pegElement?.current.scrollIntoView();
+  //     setScrolled(true);
+  //   }
+  // }, [pegElement, scrolled]);
 
   if (!obj) {
     return null;
@@ -80,18 +81,23 @@ const Bookview = ({ obj, addOrder }: Props) => {
     return Order.market;
   };
 
+  const handleBuyStop = (index: number, price: number) => {};
+  const handleSellStop = (index: number, price: number) => {};
+
   const handleBidClick = (index: number, price: number) => {
     const orderType = getOrderType(Side.buy, index, depth);
 
     // @ts-ignore
     const leverage = Leverage[pair];
+    const reduceOnly = orderType === Order.stop;
     addOrder(
       orderType as OrderType,
       Side.buy,
       price,
       pair,
       orderAmount,
-      leverage
+      leverage,
+      reduceOnly
     );
   };
 
@@ -100,13 +106,15 @@ const Bookview = ({ obj, addOrder }: Props) => {
 
     // @ts-ignore
     const leverage = Leverage[pair];
+    const reduceOnly = orderType === Order.stop;
     addOrder(
       orderType as OrderType,
       Side.sell,
       price,
       pair,
       orderAmount,
-      leverage
+      leverage,
+      reduceOnly
     );
   };
 
