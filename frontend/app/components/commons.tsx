@@ -28,5 +28,6 @@ export enum LogLevel {
 
 export type Message = {
   text: string;
+  time: string;
   level: LogLevel;
 };

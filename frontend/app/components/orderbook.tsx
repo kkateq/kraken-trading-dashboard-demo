@@ -45,11 +45,11 @@ export default function Orderbook({ addMessage }: Props) {
     [sendMessage]
   );
 
-  // useEffect(() => {
-  //   if (lastMessage !== null) {
-  //     addMessage(lastMessage.data, LogLevel.INFO);
-  //   }
-  // }, [addMessage, lastMessage]);
+  useEffect(() => {
+    if (lastMessage !== null && addMessage) {
+      addMessage(lastMessage.data, LogLevel.INFO);
+    }
+  }, [lastMessage, addMessage]);
 
   return (
     <div className="flex p-2">
