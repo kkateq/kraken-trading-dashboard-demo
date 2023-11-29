@@ -97,7 +97,7 @@ export default function Orderbook({ addMessage, messages }: Props) {
           <Orders />
         </div>
         <div>
-          <Trades />
+          <Trades pegValue={data?.peg_price} />
         </div>
         <div>
           {/* @ts-ignore */}
