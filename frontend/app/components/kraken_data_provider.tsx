@@ -38,7 +38,9 @@ type KrakenDataContextType = {
   status: {
     orderBookReadyState: ReadyState;
     orderManagementReadyState: ReadyState;
-    allSystems: ReadyState;
+    ordersReadyState: ReadyState;
+    tradesReadyState: ReadyState;
+    allSystems: number;
   };
   logMessages: Message[];
   fetchOrders: () => void;
@@ -58,6 +60,8 @@ const KrakenContext = createContext<KrakenDataContextType>({
   status: {
     orderBookReadyState: ReadyState.UNINSTANTIATED,
     orderManagementReadyState: ReadyState.UNINSTANTIATED,
+    ordersReadyState: ReadyState.UNINSTANTIATED,
+    tradesReadyState: ReadyState.UNINSTANTIATED,
     allSystems: -1,
   },
   fetchOrders: noop,
@@ -84,6 +88,15 @@ export const KrakenDataProvider = ({ children }: Props) => {
     lastMessage: orderManagementLastMessage,
     readyState: orderManagementReadyState,
   } = useWebSocket(orderManagementSocketUrl);
+
+  const [ordersWebSocketUrl] = useState("ws://localhost:8000/ws_orders");
+  const { lastMessage: ordersLastMessage, readyState: ordersReadyState } =
+    useWebSocket(ordersWebSocketUrl);
+
+  const [tradesWebSocketUrl] = useState("ws://localhost:8000/ws_trades");
+  const { lastMessage: tradesLastMessage, readyState: tradesReadyState } =
+    useWebSocket(tradesWebSocketUrl);
+
   const [orderAmount, setOrderAmount] = useState<number>(10);
   const [scaleInOut, setScaleInOut] = useState<boolean>(true);
   const [orders, setOrders] = useState([]);
@@ -92,6 +105,8 @@ export const KrakenDataProvider = ({ children }: Props) => {
   const [status, setStatus] = useState({
     orderBookReadyState: ReadyState.UNINSTANTIATED,
     orderManagementReadyState: ReadyState.UNINSTANTIATED,
+    ordersReadyState: ReadyState.UNINSTANTIATED,
+    tradesReadyState: ReadyState.UNINSTANTIATED,
     allSystems: -1,
   });
 
@@ -137,11 +152,18 @@ export const KrakenDataProvider = ({ children }: Props) => {
   }, []);
 
   useEffect(() => {
-    if (status.allSystems === ReadyState.OPEN) {
+    if (ordersReadyState === ReadyState.OPEN) {
       fetchOrders();
-      fetchTrades();
+      console.log("fetched orders");
     }
-  }, [fetchOrders, fetchTrades, status.allSystems]);
+  }, [fetchOrders, ordersLastMessage, ordersReadyState]);
+
+  useEffect(() => {
+    if (tradesReadyState === ReadyState.OPEN) {
+      fetchTrades();
+      console.log("fetched trades");
+    }
+  }, [fetchTrades, tradesLastMessage, tradesReadyState]);
 
   useEffect(() => {
     setStatus((prev) => ({
@@ -188,6 +210,21 @@ export const KrakenDataProvider = ({ children }: Props) => {
     ? JSON.parse(JSON.parse(orderBookLastMessage?.data))
     : undefined;
 
+  const systemsCount = 4;
+  const st = {
+    orderManagementReadyState,
+    ordersReadyState,
+    tradesReadyState,
+    orderBookReadyState,
+    allSystems: Math.round(
+      (orderManagementReadyState +
+        orderBookReadyState +
+        tradesReadyState +
+        ordersReadyState) /
+        systemsCount
+    ),
+  };
+
   const ctx = {
     orderAmount,
     scaleInOut,
@@ -198,11 +235,12 @@ export const KrakenDataProvider = ({ children }: Props) => {
     book: data,
     fetchOrders,
     fetchTrades,
-    status,
+    status: st,
     orders,
     trades,
   };
 
+  console.log(st);
   return (
     <KrakenContext.Provider value={ctx}>{children}</KrakenContext.Provider>
   );

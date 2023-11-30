@@ -138,7 +138,7 @@ if __name__ == "__main__":
             Route("/", homepage, name="hello"),
             WebSocketRoute("/ws_orderbook", OrderBookWebsocketEndpoint),
             WebSocketRoute("/ws_orders", OrdersWebsocketEndpoint),
-            WebSocketRoute("/ws_trades", OrdersWebsocketEndpoint),
+            WebSocketRoute("/ws_trades", TradesWebsocketEndpoint),
             WebSocketRoute("/ws_create", OperateWebsocketEndpoint),
             Route("/orders", endpoint=list_orders, methods=["GET"]),
             Route("/positions", endpoint=list_positions, methods=["GET"]),

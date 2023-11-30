@@ -29,15 +29,16 @@ export const MessageLog = () => {
       <Accordion open={open === 1}>
         <AccordionHeader onClick={() => handleOpen(1)}>Log</AccordionHeader>
         <AccordionBody>
-          {logMessages.map((x, i) => {
-            const color = LogLevelColors[x.level];
-            return (
-              <div key={i} className={`flex space-x-3 text-xs ${color}`}>
-                <div>{x.time}</div>
-                <div>{x.text}</div>
-              </div>
-            );
-          })}
+          {logMessages &&
+            logMessages.map((x, i) => {
+              const color = LogLevelColors[x.level];
+              return (
+                <div key={i} className={`flex space-x-3 text-xs ${color}`}>
+                  <div>{x.time}</div>
+                  <div>{x.text}</div>
+                </div>
+              );
+            })}
         </AccordionBody>
       </Accordion>
     </div>
