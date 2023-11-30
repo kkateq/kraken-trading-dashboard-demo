@@ -41,8 +41,7 @@ type KrakenDataContextType = {
   status: {
     orderBookReadyState: ReadyState;
     orderManagementReadyState: ReadyState;
-    ordersReadyState: ReadyState;
-    tradesReadyState: ReadyState;
+
     allSystems: number;
   };
   logMessages: Message[];
@@ -67,8 +66,6 @@ const KrakenContext = createContext<KrakenDataContextType>({
   status: {
     orderBookReadyState: ReadyState.UNINSTANTIATED,
     orderManagementReadyState: ReadyState.UNINSTANTIATED,
-    ordersReadyState: ReadyState.UNINSTANTIATED,
-    tradesReadyState: ReadyState.UNINSTANTIATED,
     allSystems: -1,
   },
   fetchOrders: noop,
@@ -98,14 +95,6 @@ export const KrakenDataProvider = ({ children }: Props) => {
     readyState: orderManagementReadyState,
   } = useWebSocket(orderManagementSocketUrl);
 
-  const [ordersWebSocketUrl] = useState("ws://localhost:8000/ws_orders");
-  const { lastMessage: ordersLastMessage, readyState: ordersReadyState } =
-    useWebSocket(ordersWebSocketUrl);
-
-  const [tradesWebSocketUrl] = useState("ws://localhost:8000/ws_trades");
-  const { lastMessage: tradesLastMessage, readyState: tradesReadyState } =
-    useWebSocket(tradesWebSocketUrl);
-
   const [orderAmount, setOrderAmount] = useState<number>(10);
   const [scaleInOut, setScaleInOut] = useState<boolean>(true);
   const [orders, setOrders] = useState([]);
@@ -119,13 +108,21 @@ export const KrakenDataProvider = ({ children }: Props) => {
     // @ts-ignore
     setMessageHistory((prev) => {
       if (prev) {
-        prev.concat({
-          // @ts-ignore
-          text,
+        if (prev.length > 0) {
+          const latestMassage = prev[prev.length - 1];
+
+          if (latestMassage.text === JSON.stringify(text)) {
+            return prev;
+          }
+        }
+        // @ts-ignore
+        prev.push({
+          text: JSON.stringify(text),
           level,
           time: moment().format(),
         });
       }
+      return prev;
     });
   };
 
@@ -157,22 +154,27 @@ export const KrakenDataProvider = ({ children }: Props) => {
   }, []);
 
   useEffect(() => {
-    if (ordersReadyState === ReadyState.OPEN) {
+    if (
+      orderManagementReadyState === ReadyState.OPEN &&
+      orderBookReadyState === ReadyState.OPEN
+    ) {
+      fetchTrades();
       fetchOrders();
     }
-  }, [fetchOrders, ordersLastMessage, ordersReadyState]);
-
-  useEffect(() => {
-    if (tradesReadyState === ReadyState.OPEN) {
-      fetchTrades();
-    }
-  }, [fetchTrades, tradesLastMessage, tradesReadyState]);
+  }, [
+    orderManagementReadyState,
+    orderBookReadyState,
+    fetchTrades,
+    fetchOrders,
+  ]);
 
   useEffect(() => {
     if (orderManagementLastMessage !== null) {
       addLogMessage(orderManagementLastMessage.data);
+      fetchTrades();
+      fetchOrders();
     }
-  }, [orderManagementLastMessage]);
+  }, [fetchOrders, fetchTrades, orderManagementLastMessage]);
 
   useEffect(() => {
     const __book = orderBookLastMessage?.data
@@ -234,18 +236,13 @@ export const KrakenDataProvider = ({ children }: Props) => {
     );
   }, [sendOrderManagementMessage]);
 
-  const systemsCount = 4;
+  const systemsCount = 2;
   const st = {
     orderManagementReadyState,
-    ordersReadyState,
-    tradesReadyState,
+
     orderBookReadyState,
     allSystems: Math.round(
-      (orderManagementReadyState +
-        orderBookReadyState +
-        tradesReadyState +
-        ordersReadyState) /
-        systemsCount
+      (orderManagementReadyState + orderBookReadyState) / systemsCount
     ),
   };
 
