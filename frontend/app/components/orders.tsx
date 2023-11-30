@@ -8,7 +8,7 @@ import { useKrakenDataContext } from "./kraken_data_provider";
 export default function Orders() {
   const { orders, cancelOrder } = useKrakenDataContext();
 
-  const handleOrderCancel = (id: string) => cancelOrder(id);
+  const handleOrderCancel = (id: string) => () => cancelOrder(id);
 
   return (
     <div className="flex flex-col overflow-auto h-full bg-gray-200 border-2 rounded border-gray-400 p-2 ">

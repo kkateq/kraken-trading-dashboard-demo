@@ -24,21 +24,24 @@ export const MessageLog = () => {
   return (
     <div
       className="overflow-auto bg-gray-200 border-2 rounded border-gray-400 p-2"
-      style={{ maxHeight: "100px" }}
+      style={{ maxHeight: "200px" }}
     >
       <Accordion open={open === 1}>
         <AccordionHeader onClick={() => handleOpen(1)}>Log</AccordionHeader>
         <AccordionBody>
-          {logMessages &&
-            logMessages.map((x, i) => {
-              const color = LogLevelColors[x.level];
-              return (
-                <div key={i} className={`flex space-x-3 text-xs ${color}`}>
-                  <div>{x.time}</div>
-                  <div>{x.text}</div>
-                </div>
-              );
-            })}
+          <div>
+            {logMessages &&
+              logMessages.map((x, i) => {
+                const color = LogLevelColors[x.level];
+                return (
+                  <div key={i} className={`flex space-x-3 text-xs ${color}`}>
+                    <div>{x.time}</div>
+                    <div>{x.text}</div>
+                  </div>
+                );
+              })}
+            {!logMessages || (!logMessages.length && <div>No messages</div>)}
+          </div>
         </AccordionBody>
       </Accordion>
     </div>

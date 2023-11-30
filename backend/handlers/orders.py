@@ -53,8 +53,6 @@ class TradingBot(KrakenSpotWSClientV1):
                 # handle exceptions/errors sent by websocket connection …
                 pass
 
-        # logging.info(message)
-
         if isinstance(message, list):
             orders = message[0]
             channel = message[1]

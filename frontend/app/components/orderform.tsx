@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Order, OrderType } from "./commons";
+import { Order, OrderType, Side, Leverage } from "./commons";
 import { Slider } from "@material-tailwind/react";
 import { useKrakenDataContext } from "./kraken_data_provider";
 
@@ -7,8 +7,14 @@ export const OrderForm = () => {
   const [orderType, setOrderType] = useState<OrderType>();
   const [simpleForm, setSimpleForm] = useState<boolean>(true);
   const [total, setTotal] = useState(0);
-  const { orderAmount, scaleInOut, setOrderAmount, setScaleInOut, book } =
-    useKrakenDataContext();
+  const {
+    orderAmount,
+    scaleInOut,
+    setOrderAmount,
+    setScaleInOut,
+    book,
+    addOrder,
+  } = useKrakenDataContext();
 
   useEffect(() => {}, [book]);
 
@@ -31,7 +37,20 @@ export const OrderForm = () => {
   };
 
   const handleBuy = () => {
-    console.log("buy");
+    const orderType = Side.buy;
+
+    // @ts-ignore
+    const leverage = Leverage[pair];
+    const reduceOnly = orderType === Order.stop;
+    addOrder(
+      orderType as OrderType,
+      Side.sell,
+      price,
+      pair,
+      orderAmount,
+      leverage,
+      reduceOnly
+    );
   };
   const handleSell = () => {
     console.log("sell");
@@ -60,7 +79,7 @@ export const OrderForm = () => {
   return (
     <div className="mt-2 border-solid border-2 border-gray-400 rounded p-2 bg-white">
       <h4 className="mb-2 text-gray-500">Order settings</h4>
-      <div className="border-b border-gray-900/10 pb-12 grid space-y-3">
+      <div className="pb-2 grid space-y-3">
         <input
           type="number"
           step="0.1"
@@ -82,6 +101,23 @@ export const OrderForm = () => {
         <div>
           <span className="bold text-green-700 text-lg">$ {total}</span>
         </div>
+        <div className="relative flex gap-x-3">
+          <div className="flex h-6 items-center">
+            <input
+              type="checkbox"
+              name="scale"
+              id="scale"
+              checked={scaleInOut}
+              onChange={handleScaleInOutChange}
+              className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
+            ></input>
+          </div>
+          <div className="text-sm leading-6">
+            <label htmlFor="scale" className="font-medium text-gray-900">
+              Scale in/out
+            </label>
+          </div>
+        </div>
 
         {!simpleForm && (
           <>
@@ -96,27 +132,10 @@ export const OrderForm = () => {
               <option value={Order.stop}>stop</option>
             </select>
 
-            <div className="relative flex gap-x-3">
-              <div className="flex h-6 items-center">
-                <input
-                  type="checkbox"
-                  name="scale"
-                  id="scale"
-                  checked={scaleInOut}
-                  onChange={handleScaleInOutChange}
-                  className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
-                ></input>
-              </div>
-              <div className="text-sm leading-6">
-                <label htmlFor="scale" className="font-medium text-gray-900">
-                  Scale in/out
-                </label>
-              </div>
-            </div>
             <button
               type="button"
               onClick={handleBuy}
-              className="rounded-md bg-sky-600 px-3 py-1 text-sm font-semibold text-white shadow-sm hover:bg-sky-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+              className="rounded-md bg-blue-600 px-3 py-1 text-sm font-semibold text-white shadow-sm hover:bg-sky-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
             >
               BUY
             </button>
@@ -132,16 +151,23 @@ export const OrderForm = () => {
         <button
           type="button"
           onClick={handleCancelAll}
-          className="rounded-md bg-gray-600 px-3 py-1 text-sm font-semibold text-white shadow-sm hover:bg-gray-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+          className="rounded-md bg-cyan-300 px-3 py-1 text-sm font-semibold text-white shadow-sm hover:bg-gray-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
         >
-          CANCEL ALL
+          CANCEL PENDING ORDERS
+        </button>
+        <button
+          type="button"
+          onClick={handleCancelAll}
+          className="rounded-md bg-orange-600 px-3 py-1 text-sm font-semibold text-white shadow-sm hover:bg-gray-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+        >
+          CLOSE POSITIONS AT MARKET
         </button>
         <button
           type="button"
           onClick={handleFlatten}
-          className="rounded-md bg-indigo-600 px-3 py-1 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+          className="rounded-md bg-gray-600 px-3 py-1 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
         >
-          FLATTEN
+          FLATTEN POSITIONS
         </button>
 
         <div className="relative flex gap-x-3">
@@ -156,7 +182,7 @@ export const OrderForm = () => {
             ></input>
           </div>
           <div className="text-sm leading-6">
-            <label htmlFor="simpleForm" className="font-medium text-gray-900">
+            <label htmlFor="simpleForm" className="font-medium text-blue-700">
               Simple form
             </label>
           </div>

@@ -1,21 +1,14 @@
 "use client";
 
-import { LogLevel } from "./commons";
 import Book from "./bookview";
 import WsStatusIcon from "./wsstatusicon";
 import Orders from "./orders";
 import Trades from "./trades";
 import MessageLog from "./messagelog";
-import { Message } from "postcss";
 import { OrderForm } from "./orderform";
 import { useKrakenDataContext } from "./kraken_data_provider";
 
-type Props = {
-  addMessage?: (text: string, level: LogLevel) => void;
-  messages: [Message];
-};
-
-export default function Orderbook({ addMessage, messages }: Props) {
+export default function Orderbook() {
   const {
     status: { allSystems },
   } = useKrakenDataContext();
@@ -23,7 +16,10 @@ export default function Orderbook({ addMessage, messages }: Props) {
   return (
     <div className="flex ml-1">
       <div className="flex flex-col gap-2" style={{ minWidth: "500px" }}>
-        <div>Balance</div>
+        <div className="pt-2 flex">
+          <WsStatusIcon readyState={allSystems} />
+          Balance
+        </div>
         <div>
           <OrderForm />
         </div>
@@ -34,14 +30,9 @@ export default function Orderbook({ addMessage, messages }: Props) {
           <Trades />
         </div>
         <div>
-          {/* @ts-ignore */}
-          <MessageLog messages={messages} />
-          <div className="p-2 flex">
-            <WsStatusIcon readyState={allSystems} />
-          </div>
+          <MessageLog />
         </div>
       </div>
-
       <div className="w-full">
         <Book />
       </div>

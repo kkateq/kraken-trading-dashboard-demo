@@ -94,29 +94,32 @@ class OperateWebsocketEndpoint(WebSocketEndpoint):
     async def on_connect(self, websocket: WebSocket) -> None:
         await websocket.accept()
 
+    async def parse_and_send_response(self, websocket, res, operation):
+        if res:
+            body = json.loads(res.body)
+            await websocket.send_json(body)
+        else:
+            logger.warning("No response received after {} execution".format(operation))
+
     async def on_receive(self, websocket: WebSocket, data) -> None:
         if kraken_manager:
             operation = data["operation"]
-            if operation and operation == "add_order":
-                logging.info("Operation add_order executed.")
-                res = await self.add_order(data)
-                if res:
-                    body = json.loads(res.body)
-                    await websocket.send_json(body)
-                else:
-                    logger.warning(
-                        "No response received after {} execution".format(operation)
-                    )
-            if operation and operation == "cancel_pending_order":
-                logging.info("Operation cancel_pending_order executed.")
-                res = await self.cancel_order(data)
-                if res:
-                    body = json.loads(res.body)
-                    await websocket.send_json(body)
-                else:
-                    logger.warning(
-                        "No response received after {} execution".format(operation)
-                    )
+            logging.info("Operation {operation} executed.".format(operation))
+            match operation:
+                case "add_order":
+                    res = await self.add_order(data)
+                    await self.parse_and_send_response(websocket, res, operation)
+                    return
+
+                case "cancel_pending_order":
+                    res = await self.cancel_order(data)
+                    await self.parse_and_send_response(websocket, res, operation)
+                    return
+
+                case "cancel_all_pending_order":
+                    res = await self.cancel_all_pending_orders(data)
+                    await self.parse_and_send_response(websocket, res, operation)
+                    return
 
 
 def openapi_schema(request):
