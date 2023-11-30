@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import moment from "moment";
+import { IconButton, Tooltip } from "@material-tailwind/react";
 export default function Orders() {
   const [orders, setOrders] = useState([]);
 
@@ -53,7 +54,24 @@ export default function Orders() {
                   <td>{moment.unix(opentm).format("MM/DD/YY HH:MM")}</td>
                   <td className={color}>{order}</td>
                   <td>
-                    <button>Cancel</button>
+                    <Tooltip content="Cancel order">
+                      <IconButton size="sm" variant="outlined">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          strokeWidth={1.5}
+                          stroke="currentColor"
+                          className="w-6 h-6"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M6 18L18 6M6 6l12 12"
+                          />
+                        </svg>
+                      </IconButton>
+                    </Tooltip>
                   </td>
                 </tr>
               );
