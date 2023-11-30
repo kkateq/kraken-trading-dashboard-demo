@@ -35,3 +35,22 @@ export type Message = {
   time: string;
   level: LogLevel;
 };
+
+export function noop() {}
+
+export type BookPriceType = {
+  price: number;
+  bid: number;
+  ask: number;
+};
+
+export type BookDataType = {
+  depth: number;
+  data: [BookPriceType];
+  pair: string;
+  ask_volume_total: number;
+  bid_volume_total: number;
+  ask_volume_total_percentage: number;
+  bids_volume_total_percentage: number;
+  peg_price: number;
+};

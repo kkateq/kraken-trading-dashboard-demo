@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import { IconButton, Tooltip } from "@material-tailwind/react";
-type Props = {
-  pegValue: number;
-};
-export default function Trades({ pegValue }: Props) {
+
+import { useKrakenDataContext } from "./kraken_data_provider";
+
+export default function Trades() {
   const [trades, setTrades] = useState([]);
+  const { book } = useKrakenDataContext();
 
   const fetchData = () => {
     fetch("http://localhost:8000/positions")
@@ -23,6 +24,8 @@ export default function Trades({ pegValue }: Props) {
   }, []);
 
   const round = (v: number, prec: number = 100) => Math.round(v * prec) / prec;
+
+  const pegValue = book?.peg_price || 0;
 
   return (
     <div className="flex flex-col overflow-auto h-full bg-gray-200 border-2 rounded border-blue-400 p-2">

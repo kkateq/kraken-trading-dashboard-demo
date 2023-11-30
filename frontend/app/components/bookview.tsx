@@ -1,44 +1,22 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { Order, OrderType, Side, SideType, Leverage } from "./commons";
+import {
+  Order,
+  OrderType,
+  Side,
+  SideType,
+  Leverage,
+  BookPriceType,
+} from "./commons";
+import { useKrakenDataContext } from "./kraken_data_provider";
 
-type Price = {
-  price: number;
-  bid: number;
-  ask: number;
-};
-type Data = {
-  depth: number;
-  data: [Price];
-  pair: string;
-  ask_volume_total: number;
-  bid_volume_total: number;
-  ask_volume_total_percentage: number;
-  bids_volume_total_percentage: number;
-  peg_price: number;
-};
-type Props = {
-  book: Data;
-  orderAmount: number;
-  addOrder: (
-    ordertype: OrderType,
-    side: SideType,
-    price: number,
-    pair: string,
-    volume: number,
-    leverage: any,
-    reduce_only: boolean
-  ) => void;
-};
-
-const Bookview = ({ book, addOrder, orderAmount }: Props) => {
-  const [scrolled, setScrolled] = useState(false);
-  const pegElement = useRef<HTMLHRElement>(null);
+const Bookview = () => {
+  const { book, orderAmount, addOrder } = useKrakenDataContext();
 
   if (!book) {
     return null;
   }
+
   const {
     data,
     pair,
@@ -47,8 +25,7 @@ const Bookview = ({ book, addOrder, orderAmount }: Props) => {
     bid_volume_total,
     ask_volume_total_percentage,
     bids_volume_total_percentage,
-    peg_price,
-  }: Data = book;
+  } = book;
 
   const bidColor = "sky";
   const askColor = "pink";
@@ -136,7 +113,7 @@ const Bookview = ({ book, addOrder, orderAmount }: Props) => {
         </div>
         <div className="bg-white overflow-hidden flex flex-col h-full border-solid border-2 rounded border-gray-400 p-1">
           <div className="overflow-auto divide-y">
-            {data.map((x: Price, i) => (
+            {data.map((x: BookPriceType, i) => (
               <div key={i} className="divide-y">
                 <div className="border-1 flex space-x-2 divide-x">
                   <div

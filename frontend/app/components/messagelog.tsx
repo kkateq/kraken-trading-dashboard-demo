@@ -6,12 +6,9 @@ import {
   AccordionHeader,
   AccordionBody,
 } from "@material-tailwind/react";
+import { useKrakenDataContext } from "./kraken_data_provider";
 
 import { LogLevel, Message } from "./commons";
-
-type Props = {
-  messages: [Message];
-};
 
 const LogLevelColors = {
   [LogLevel.INFO]: "text-gray-600",
@@ -19,7 +16,8 @@ const LogLevelColors = {
   [LogLevel.WARNING]: "text-orange-400",
 };
 
-export const MessageLog = ({ messages }: Props) => {
+export const MessageLog = () => {
+  const { logMessages } = useKrakenDataContext();
   const [open, setOpen] = useState(1);
   const handleOpen = (value: number) => setOpen(open === value ? 0 : value);
 
@@ -31,7 +29,7 @@ export const MessageLog = ({ messages }: Props) => {
       <Accordion open={open === 1}>
         <AccordionHeader onClick={() => handleOpen(1)}>Log</AccordionHeader>
         <AccordionBody>
-          {messages.map((x, i) => {
+          {logMessages.map((x, i) => {
             const color = LogLevelColors[x.level];
             return (
               <div key={i} className={`flex space-x-3 text-xs ${color}`}>

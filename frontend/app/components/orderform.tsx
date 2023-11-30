@@ -1,24 +1,14 @@
 import { useEffect, useState } from "react";
 import { Order, OrderType } from "./commons";
 import { Slider } from "@material-tailwind/react";
+import { useKrakenDataContext } from "./kraken_data_provider";
 
-type Props = {
-  orderAmount: number;
-  scaleInOut: boolean;
-  onChangeOrderAmount: (newValue: number) => void;
-  onChangeScaleInOut: (newValue: boolean) => void;
-  pegPrice: number;
-};
-export const OrderForm = ({
-  orderAmount,
-  onChangeOrderAmount,
-  scaleInOut,
-  onChangeScaleInOut,
-  pegPrice,
-}: Props) => {
+export const OrderForm = () => {
   const [orderType, setOrderType] = useState<OrderType>();
   const [simpleForm, setSimpleForm] = useState<boolean>(true);
   const [total, setTotal] = useState(0);
+  const { orderAmount, scaleInOut, setOrderAmount, setScaleInOut, book } =
+    useKrakenDataContext();
 
   const handleOrderTypeSelection = (
     e: React.ChangeEvent<HTMLSelectElement>
@@ -27,11 +17,11 @@ export const OrderForm = ({
   };
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    onChangeOrderAmount(e.target.value as any);
+    setOrderAmount(e.target.value as any);
   };
 
   const handleScaleInOutChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    onChangeScaleInOut(!scaleInOut);
+    setScaleInOut(!scaleInOut);
   };
 
   const handleSimpleForm = () => {
@@ -52,12 +42,14 @@ export const OrderForm = ({
   };
 
   const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    onChangeOrderAmount(e.target.value as any);
+    setOrderAmount(e.target.value as any);
   };
 
   useEffect(() => {
-    setTotal(Math.round(orderAmount * pegPrice * 10000) / 10000);
-  }, [orderAmount, pegPrice]);
+    if (book?.peg_price) {
+      setTotal(Math.round(orderAmount * book?.peg_price * 10000) / 10000);
+    }
+  }, [orderAmount, book]);
 
   return (
     <div className="mt-2 border-solid border-2 border-gray-400 rounded p-2 bg-white">
