@@ -8,7 +8,7 @@ import {
 } from "@material-tailwind/react";
 import { useKrakenDataContext } from "./kraken_data_provider";
 
-import { LogLevel, Message } from "./commons";
+import { LogLevel } from "./commons";
 
 const LogLevelColors = {
   [LogLevel.INFO]: "text-gray-600",

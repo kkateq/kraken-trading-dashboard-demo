@@ -54,3 +54,15 @@ export type BookDataType = {
   bids_volume_total_percentage: number;
   peg_price: number;
 };
+
+export type TradeResponseType = {
+  type: "sell" | "buy";
+  vol: number;
+  cost: number;
+  leverage: number;
+  pair: string;
+};
+
+export type OrderResponseType = {
+  value: { opentm: number; descr: { order: string; type: "sell" | "buy" } };
+};

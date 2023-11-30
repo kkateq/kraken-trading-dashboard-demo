@@ -1,8 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect, useContext } from "react";
-import useWebSocket, { ReadyState } from "react-use-websocket";
-import { OrderType, SideType, LogLevel, DefaultVolume } from "./commons";
+import { LogLevel } from "./commons";
 import Book from "./bookview";
 import WsStatusIcon from "./wsstatusicon";
 import Orders from "./orders";

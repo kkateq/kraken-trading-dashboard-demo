@@ -3,28 +3,10 @@
 import { useState, useEffect } from "react";
 import moment from "moment";
 import { IconButton, Tooltip } from "@material-tailwind/react";
+import { useKrakenDataContext } from "./kraken_data_provider";
+
 export default function Orders() {
-  const [orders, setOrders] = useState([]);
-
-  const fetchData = () => {
-    fetch("http://localhost:8000/orders")
-      .then((response) => response.json())
-      .then((data) => {
-        const res = [];
-        const payload = JSON.parse(data);
-        for (const [key, value] of Object.entries(payload)) {
-          res.push({ id: key, value });
-        }
-        setOrders(res);
-      })
-      .catch((err) => {
-        console.log(err.message);
-      });
-  };
-
-  useEffect(() => {
-    fetchData();
-  }, []);
+  const { orders } = useKrakenDataContext();
 
   return (
     <div className="flex flex-col overflow-auto h-full bg-gray-200 border-2 rounded border-gray-400 p-2 ">

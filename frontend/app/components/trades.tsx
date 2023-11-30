@@ -4,24 +4,7 @@ import { IconButton, Tooltip } from "@material-tailwind/react";
 import { useKrakenDataContext } from "./kraken_data_provider";
 
 export default function Trades() {
-  const [trades, setTrades] = useState([]);
-  const { book } = useKrakenDataContext();
-
-  const fetchData = () => {
-    fetch("http://localhost:8000/positions")
-      .then((response) => response.json())
-      .then((data) => {
-        setTrades(data);
-        console.log(data);
-      })
-      .catch((err) => {
-        console.log(err.message);
-      });
-  };
-
-  useEffect(() => {
-    fetchData();
-  }, []);
+  const { book, trades } = useKrakenDataContext();
 
   const round = (v: number, prec: number = 100) => Math.round(v * prec) / prec;
 

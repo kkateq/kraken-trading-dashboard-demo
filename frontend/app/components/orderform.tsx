@@ -47,9 +47,13 @@ export const OrderForm = () => {
 
   useEffect(() => {
     if (book?.peg_price) {
-      setTotal(Math.round(orderAmount * book?.peg_price * 10000) / 10000);
+      const newTotal =
+        Math.round(orderAmount * book?.peg_price * 10000) / 10000;
+      if (newTotal !== total) {
+        setTotal(Math.round(orderAmount * book?.peg_price * 10000) / 10000);
+      }
     }
-  }, [orderAmount, book]);
+  }, [orderAmount, book, total]);
 
   return (
     <div className="mt-2 border-solid border-2 border-gray-400 rounded p-2 bg-white">

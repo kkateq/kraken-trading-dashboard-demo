@@ -13,10 +13,11 @@ import {
   OrderType,
   SideType,
   LogLevel,
-  DefaultVolume,
   Message,
   noop,
   BookDataType,
+  TradeResponseType,
+  OrderResponseType,
 } from "./commons";
 
 type KrakenDataContextType = {
@@ -40,6 +41,10 @@ type KrakenDataContextType = {
     allSystems: ReadyState;
   };
   logMessages: Message[];
+  fetchOrders: () => void;
+  fetchTrades: () => void;
+  trades: TradeResponseType[];
+  orders: OrderResponseType[];
 };
 
 const KrakenContext = createContext<KrakenDataContextType>({
@@ -55,6 +60,10 @@ const KrakenContext = createContext<KrakenDataContextType>({
     orderManagementReadyState: ReadyState.UNINSTANTIATED,
     allSystems: -1,
   },
+  fetchOrders: noop,
+  fetchTrades: noop,
+  trades: [],
+  orders: [],
 });
 
 export const useKrakenDataContext = () => useContext(KrakenContext);
@@ -77,12 +86,62 @@ export const KrakenDataProvider = ({ children }: Props) => {
   } = useWebSocket(orderManagementSocketUrl);
   const [orderAmount, setOrderAmount] = useState<number>(10);
   const [scaleInOut, setScaleInOut] = useState<boolean>(true);
+  const [orders, setOrders] = useState([]);
+  const [trades, setTrades] = useState([]);
 
   const [status, setStatus] = useState({
     orderBookReadyState: ReadyState.UNINSTANTIATED,
     orderManagementReadyState: ReadyState.UNINSTANTIATED,
     allSystems: -1,
   });
+
+  const addLogMessage = (text: string, level: LogLevel = LogLevel.INFO) => {
+    // @ts-ignore
+    setMessageHistory((prev) => {
+      if (prev) {
+        prev.concat({
+          // @ts-ignore
+          text,
+          level,
+          time: moment().format(),
+        });
+      }
+    });
+  };
+
+  const fetchOrders = useCallback(() => {
+    fetch("http://localhost:8000/orders")
+      .then((response) => response.json())
+      .then((data) => {
+        const res = [];
+        const payload = JSON.parse(data);
+        for (const [key, value] of Object.entries(payload)) {
+          res.push({ id: key, value });
+        }
+        setOrders(res);
+      })
+      .catch((err) => {
+        addLogMessage(err.message, LogLevel.ERROR);
+      });
+  }, []);
+
+  const fetchTrades = useCallback(() => {
+    fetch("http://localhost:8000/positions")
+      .then((response) => response.json())
+      .then((data) => {
+        setTrades(data);
+      })
+      .catch((err) => {
+        addLogMessage(err.message, LogLevel.ERROR);
+      });
+  }, []);
+
+  useEffect(() => {
+    if (status.allSystems === ReadyState.OPEN) {
+      fetchOrders();
+      fetchTrades();
+    }
+  }, [fetchOrders, fetchTrades, status.allSystems]);
 
   useEffect(() => {
     setStatus((prev) => ({
@@ -95,17 +154,7 @@ export const KrakenDataProvider = ({ children }: Props) => {
 
   useEffect(() => {
     if (orderManagementLastMessage !== null) {
-      // @ts-ignore
-      setMessageHistory((prev) => {
-        if (prev) {
-          prev.concat({
-            // @ts-ignore
-            text: orderManagementLastMessage.data,
-            level: LogLevel.INFO,
-            time: moment().format(),
-          });
-        }
-      });
+      addLogMessage(orderManagementLastMessage.data);
     }
   }, [orderManagementLastMessage]);
 
@@ -147,7 +196,11 @@ export const KrakenDataProvider = ({ children }: Props) => {
     setOrderAmount,
     setScaleInOut,
     book: data,
+    fetchOrders,
+    fetchTrades,
     status,
+    orders,
+    trades,
   };
 
   return (
