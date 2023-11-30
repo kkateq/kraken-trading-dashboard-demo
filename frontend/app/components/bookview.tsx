@@ -30,7 +30,7 @@ const Bookview = () => {
     bids_volume_total_percentage,
   } = book;
 
-  const bidColor = "sky";
+  const bidColor = "blue";
   const askColor = "pink";
 
   const getOrderType = (
@@ -111,7 +111,7 @@ const Bookview = () => {
       <div className="ml-2" style={{ width: "400px" }}>
         <div className="space-x-1 mt-1 flex">
           <div className="bold mr-4">
-            <div className="w-72">
+            <div className="flex border-solid border-2 rounded border-gray-400">
               <select
                 id="selectPair"
                 onChange={handlePairChange}
@@ -140,8 +140,8 @@ const Bookview = () => {
                   <div
                     className={
                       i < depth
-                        ? "flex-1 pr-2 text-right text-sky-800 cursor-pointer hover:bg-cyan-100"
-                        : "flex-1 pr-2 text-right text-sky-800 cursor-pointer hover:bg-sky-100"
+                        ? "flex-1 pr-2 text-right text-blue-800 cursor-pointer hover:bg-cyan-100"
+                        : "flex-1 pr-2 text-right text-blue-800 cursor-pointer hover:bg-blue-100"
                     }
                     onClick={() => handleBidClick(i, x.price)}
                   >
@@ -164,7 +164,7 @@ const Bookview = () => {
                 {i === depth - 1 ? (
                   <div className="border-1 flex space-x-2">
                     <div
-                      className="p-3 flex-1 pr-2 text-right text-sky-800 cursor-pointer hover:bg-sky-600"
+                      className="p-3 flex-1 pr-2 text-right text-blue-800 cursor-pointer hover:bg-blue-600"
                       onClick={() => handleBuyMarketClick(x.price)}
                     ></div>
                     <div className="flex-1 text-center text-gray-500"></div>
