@@ -64,5 +64,8 @@ export type TradeResponseType = {
 };
 
 export type OrderResponseType = {
+  id: string;
   value: { opentm: number; descr: { order: string; type: "sell" | "buy" } };
 };
+
+export const WATCH_PAIRS = ["MATIC/USD", "BTC/USD"];

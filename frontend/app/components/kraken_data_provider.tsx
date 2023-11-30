@@ -34,6 +34,7 @@ type KrakenDataContextType = {
     leverage: any,
     reduce_only: boolean
   ) => void;
+  cancelOrder: (id: string) => void;
   setOrderAmount: (arg0: number) => void;
   status: {
     orderBookReadyState: ReadyState;
@@ -57,6 +58,7 @@ const KrakenContext = createContext<KrakenDataContextType>({
   setOrderAmount: noop,
   setScaleInOut: noop,
   book: undefined,
+  cancelOrder: noop,
   status: {
     orderBookReadyState: ReadyState.UNINSTANTIATED,
     orderManagementReadyState: ReadyState.UNINSTANTIATED,
@@ -101,14 +103,6 @@ export const KrakenDataProvider = ({ children }: Props) => {
   const [scaleInOut, setScaleInOut] = useState<boolean>(true);
   const [orders, setOrders] = useState([]);
   const [trades, setTrades] = useState([]);
-
-  const [status, setStatus] = useState({
-    orderBookReadyState: ReadyState.UNINSTANTIATED,
-    orderManagementReadyState: ReadyState.UNINSTANTIATED,
-    ordersReadyState: ReadyState.UNINSTANTIATED,
-    tradesReadyState: ReadyState.UNINSTANTIATED,
-    allSystems: -1,
-  });
 
   const addLogMessage = (text: string, level: LogLevel = LogLevel.INFO) => {
     // @ts-ignore
@@ -166,15 +160,6 @@ export const KrakenDataProvider = ({ children }: Props) => {
   }, [fetchTrades, tradesLastMessage, tradesReadyState]);
 
   useEffect(() => {
-    setStatus((prev) => ({
-      ...prev,
-      orderBookReadyState,
-      orderManagementReadyState,
-      status: orderBookReadyState + orderManagementReadyState,
-    }));
-  }, [orderBookReadyState, orderManagementReadyState]);
-
-  useEffect(() => {
     if (orderManagementLastMessage !== null) {
       addLogMessage(orderManagementLastMessage.data);
     }
@@ -200,6 +185,18 @@ export const KrakenDataProvider = ({ children }: Props) => {
           volume,
           leverage,
           reduce_only,
+        })
+      );
+    },
+    [sendOrderManagementMessage]
+  );
+
+  const cancelOrder = useCallback(
+    (id: string) => {
+      sendOrderManagementMessage(
+        JSON.stringify({
+          operation: "cancel_pending_order",
+          id,
         })
       );
     },
@@ -238,9 +235,9 @@ export const KrakenDataProvider = ({ children }: Props) => {
     status: st,
     orders,
     trades,
+    cancelOrder,
   };
 
-  console.log(st);
   return (
     <KrakenContext.Provider value={ctx}>{children}</KrakenContext.Provider>
   );

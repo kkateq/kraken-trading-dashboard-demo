@@ -6,7 +6,9 @@ import { IconButton, Tooltip } from "@material-tailwind/react";
 import { useKrakenDataContext } from "./kraken_data_provider";
 
 export default function Orders() {
-  const { orders } = useKrakenDataContext();
+  const { orders, cancelOrder } = useKrakenDataContext();
+
+  const handleOrderCancel = (id: string) => cancelOrder(id);
 
   return (
     <div className="flex flex-col overflow-auto h-full bg-gray-200 border-2 rounded border-gray-400 p-2 ">
@@ -22,13 +24,14 @@ export default function Orders() {
         <tbody>
           {orders &&
             orders.length > 0 &&
-            orders.map((trade, i) => {
+            orders.map((entry, i) => {
               const {
+                id,
                 value: {
                   opentm,
                   descr: { order, type },
                 },
-              } = trade;
+              } = entry;
               const color =
                 type === "sell" ? "text-pink-400" : "text-green-500";
               return (
@@ -37,7 +40,11 @@ export default function Orders() {
                   <td className={color}>{order}</td>
                   <td>
                     <Tooltip content="Cancel order">
-                      <IconButton size="sm" variant="outlined">
+                      <IconButton
+                        size="sm"
+                        variant="outlined"
+                        onClick={handleOrderCancel(id)}
+                      >
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
                           fill="none"

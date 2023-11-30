@@ -28,7 +28,7 @@ schemas = SchemaGenerator(
     {"openapi": "3.0.0", "info": {"title": "Alpha API", "version": "1.0"}}
 )
 
-pairs = ["MATIC/USD"]
+pairs = ["MATIC/USD", "BTC/USD"]
 
 kraken_manager = None
 
@@ -82,6 +82,15 @@ class OperateWebsocketEndpoint(WebSocketEndpoint):
         else:
             logging.error("Not all arguments specified for order creation.")
 
+    async def cancel_order(self, data) -> None:
+        txid = data["id"] if "id" in data else None
+
+        if txid:
+            res = kraken_manager.bot.cancel_pending_order(txid)
+            return JSONResponse(res)
+        else:
+            logging.error("Not all arguments specified for order creation.")
+
     async def on_connect(self, websocket: WebSocket) -> None:
         await websocket.accept()
 
@@ -91,6 +100,16 @@ class OperateWebsocketEndpoint(WebSocketEndpoint):
             if operation and operation == "add_order":
                 logging.info("Operation add_order executed.")
                 res = await self.add_order(data)
+                if res:
+                    body = json.loads(res.body)
+                    await websocket.send_json(body)
+                else:
+                    logger.warning(
+                        "No response received after {} execution".format(operation)
+                    )
+            if operation and operation == "cancel_pending_order":
+                logging.info("Operation cancel_pending_order executed.")
+                res = await self.cancel_order(data)
                 if res:
                     body = json.loads(res.body)
                     await websocket.send_json(body)

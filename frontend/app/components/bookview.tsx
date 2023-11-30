@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import {
   Order,
   OrderType,
@@ -7,13 +8,26 @@ import {
   SideType,
   Leverage,
   BookPriceType,
+  BookDataType,
+  WATCH_PAIRS,
 } from "./commons";
 import { useKrakenDataContext } from "./kraken_data_provider";
+import { Select, Option } from "@material-tailwind/react";
 
 const Bookview = () => {
-  const { book, orderAmount, addOrder } = useKrakenDataContext();
+  const { book: __book, orderAmount, addOrder } = useKrakenDataContext();
+  const [selectedPair, setSelectedPair] = useState(WATCH_PAIRS[0]);
+  const [selectedBook, setSelectedBook] = useState<BookDataType | undefined>(
+    undefined
+  );
 
-  if (!book) {
+  useEffect(() => {
+    if (__book && __book.pair === selectedPair) {
+      setSelectedBook(__book);
+    }
+  }, [__book, selectedPair]);
+
+  if (!selectedBook) {
     return null;
   }
 
@@ -25,7 +39,7 @@ const Bookview = () => {
     bid_volume_total,
     ask_volume_total_percentage,
     bids_volume_total_percentage,
-  } = book;
+  } = selectedBook;
 
   const bidColor = "sky";
   const askColor = "pink";
@@ -99,11 +113,29 @@ const Bookview = () => {
     console.log("sell" + "|" + orderType + "|" + price);
   };
 
+  const handlePairChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedPair(e.target.value as any);
+  };
+
   return (
     <div className="flex rounded text-sm" style={{ height: "95vh" }}>
       <div className="ml-2" style={{ width: "400px" }}>
         <div className="space-x-1 mt-1 flex">
-          <div className="bold mr-4">{pair}</div>
+          <div className="bold mr-4">
+            <div className="w-72">
+              <select
+                id="selectPair"
+                onChange={handlePairChange}
+                value={selectedPair}
+              >
+                {WATCH_PAIRS.map((v, i) => (
+                  <option value={v} key={i}>
+                    {v}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
           <span className={`w-full text-${bidColor}-800`}>
             {bid_volume_total}({bids_volume_total_percentage}%)
           </span>
