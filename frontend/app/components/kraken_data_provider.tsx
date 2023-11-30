@@ -36,6 +36,7 @@ type KrakenDataContextType = {
     reduce_only: boolean
   ) => void;
   cancelOrder: (id: string) => void;
+  cancelAllPendingOrders: () => void;
   setOrderAmount: (arg0: number) => void;
   status: {
     orderBookReadyState: ReadyState;
@@ -62,6 +63,7 @@ const KrakenContext = createContext<KrakenDataContextType>({
   setScaleInOut: noop,
   book: undefined,
   cancelOrder: noop,
+  cancelAllPendingOrders: noop,
   status: {
     orderBookReadyState: ReadyState.UNINSTANTIATED,
     orderManagementReadyState: ReadyState.UNINSTANTIATED,
@@ -224,6 +226,14 @@ export const KrakenDataProvider = ({ children }: Props) => {
     [sendOrderManagementMessage]
   );
 
+  const cancelAllPendingOrders = useCallback(() => {
+    sendOrderManagementMessage(
+      JSON.stringify({
+        operation: "cancel_all_pending_orders",
+      })
+    );
+  }, [sendOrderManagementMessage]);
+
   const systemsCount = 4;
   const st = {
     orderManagementReadyState,
@@ -255,6 +265,7 @@ export const KrakenDataProvider = ({ children }: Props) => {
     cancelOrder,
     setSelectedPair,
     selectedPair,
+    cancelAllPendingOrders,
   };
 
   return (

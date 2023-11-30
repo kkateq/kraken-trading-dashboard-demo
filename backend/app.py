@@ -28,7 +28,7 @@ schemas = SchemaGenerator(
     {"openapi": "3.0.0", "info": {"title": "Alpha API", "version": "1.0"}}
 )
 
-pairs = ["MATIC/USD", "BTC/USD"]
+pairs = ["MATIC/USD"]
 
 kraken_manager = None
 
@@ -91,6 +91,10 @@ class OperateWebsocketEndpoint(WebSocketEndpoint):
         else:
             logging.error("Not all arguments specified for order creation.")
 
+    async def cancel_all_pending_orders(self) -> None:
+        res = kraken_manager.bot.cancel_all_pending_orders()
+        return JSONResponse(res)
+
     async def on_connect(self, websocket: WebSocket) -> None:
         await websocket.accept()
 
@@ -104,22 +108,23 @@ class OperateWebsocketEndpoint(WebSocketEndpoint):
     async def on_receive(self, websocket: WebSocket, data) -> None:
         if kraken_manager:
             operation = data["operation"]
-            logging.info("Operation {operation} executed.".format(operation))
-            match operation:
-                case "add_order":
-                    res = await self.add_order(data)
-                    await self.parse_and_send_response(websocket, res, operation)
-                    return
+            if operation:
+                logging.info("Operation {} executed.".format(operation))
+                match operation:
+                    case "add_order":
+                        res = await self.add_order(data)
+                        await self.parse_and_send_response(websocket, res, operation)
+                        return
 
-                case "cancel_pending_order":
-                    res = await self.cancel_order(data)
-                    await self.parse_and_send_response(websocket, res, operation)
-                    return
+                    case "cancel_pending_order":
+                        res = await self.cancel_order(data)
+                        await self.parse_and_send_response(websocket, res, operation)
+                        return
 
-                case "cancel_all_pending_order":
-                    res = await self.cancel_all_pending_orders(data)
-                    await self.parse_and_send_response(websocket, res, operation)
-                    return
+                    case "cancel_all_pending_orders":
+                        res = await self.cancel_all_pending_orders()
+                        await self.parse_and_send_response(websocket, res, operation)
+                        return
 
 
 def openapi_schema(request):

@@ -12,6 +12,7 @@ export const OrderForm = () => {
     scaleInOut,
     setOrderAmount,
     setScaleInOut,
+    cancelAllPendingOrders,
     book,
     addOrder,
   } = useKrakenDataContext();
@@ -37,26 +38,25 @@ export const OrderForm = () => {
   };
 
   const handleBuy = () => {
-    const orderType = Side.buy;
-
-    // @ts-ignore
-    const leverage = Leverage[pair];
-    const reduceOnly = orderType === Order.stop;
-    addOrder(
-      orderType as OrderType,
-      Side.sell,
-      price,
-      pair,
-      orderAmount,
-      leverage,
-      reduceOnly
-    );
+    // const orderType = Side.buy;
+    // // @ts-ignore
+    // const leverage = Leverage[pair];
+    // const reduceOnly = orderType === Order.stop;
+    // addOrder(
+    //   orderType as OrderType,
+    //   Side.sell,
+    //   price,
+    //   pair,
+    //   orderAmount,
+    //   leverage,
+    //   reduceOnly
+    // );
   };
   const handleSell = () => {
     console.log("sell");
   };
   const handleCancelAll = () => {
-    console.log("cancel all");
+    cancelAllPendingOrders();
   };
   const handleFlatten = () => {
     console.log("flatten");
