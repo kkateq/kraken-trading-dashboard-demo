@@ -18,6 +18,7 @@ import {
   BookDataType,
   TradeResponseType,
   OrderResponseType,
+  WATCH_PAIRS,
 } from "./commons";
 
 type KrakenDataContextType = {
@@ -48,6 +49,8 @@ type KrakenDataContextType = {
   fetchTrades: () => void;
   trades: TradeResponseType[];
   orders: OrderResponseType[];
+  setSelectedPair: (p: string) => void;
+  selectedPair: string;
 };
 
 const KrakenContext = createContext<KrakenDataContextType>({
@@ -70,6 +73,8 @@ const KrakenContext = createContext<KrakenDataContextType>({
   fetchTrades: noop,
   trades: [],
   orders: [],
+  setSelectedPair: noop,
+  selectedPair: WATCH_PAIRS[0],
 });
 
 export const useKrakenDataContext = () => useContext(KrakenContext);
@@ -103,6 +108,10 @@ export const KrakenDataProvider = ({ children }: Props) => {
   const [scaleInOut, setScaleInOut] = useState<boolean>(true);
   const [orders, setOrders] = useState([]);
   const [trades, setTrades] = useState([]);
+  const [selectedPair, setSelectedPair] = useState(WATCH_PAIRS[0]);
+  const [selectedBook, setSelectedBook] = useState<BookDataType | undefined>(
+    undefined
+  );
 
   const addLogMessage = (text: string, level: LogLevel = LogLevel.INFO) => {
     // @ts-ignore
@@ -148,14 +157,12 @@ export const KrakenDataProvider = ({ children }: Props) => {
   useEffect(() => {
     if (ordersReadyState === ReadyState.OPEN) {
       fetchOrders();
-      console.log("fetched orders");
     }
   }, [fetchOrders, ordersLastMessage, ordersReadyState]);
 
   useEffect(() => {
     if (tradesReadyState === ReadyState.OPEN) {
       fetchTrades();
-      console.log("fetched trades");
     }
   }, [fetchTrades, tradesLastMessage, tradesReadyState]);
 
@@ -164,6 +171,20 @@ export const KrakenDataProvider = ({ children }: Props) => {
       addLogMessage(orderManagementLastMessage.data);
     }
   }, [orderManagementLastMessage]);
+
+  useEffect(() => {
+    const __book = orderBookLastMessage?.data
+      ? JSON.parse(JSON.parse(orderBookLastMessage?.data))
+      : undefined;
+
+    if (
+      __book &&
+      __book.pair === selectedPair &&
+      __book.checksum !== selectedBook?.checksum
+    ) {
+      setSelectedBook(__book);
+    }
+  }, [orderBookLastMessage, selectedBook?.checksum, selectedPair]);
 
   const addOrder = useCallback(
     (
@@ -203,10 +224,6 @@ export const KrakenDataProvider = ({ children }: Props) => {
     [sendOrderManagementMessage]
   );
 
-  const data = orderBookLastMessage?.data
-    ? JSON.parse(JSON.parse(orderBookLastMessage?.data))
-    : undefined;
-
   const systemsCount = 4;
   const st = {
     orderManagementReadyState,
@@ -229,13 +246,15 @@ export const KrakenDataProvider = ({ children }: Props) => {
     logMessages: messages,
     setOrderAmount,
     setScaleInOut,
-    book: data,
+    book: selectedBook,
     fetchOrders,
     fetchTrades,
     status: st,
     orders,
     trades,
     cancelOrder,
+    setSelectedPair,
+    selectedPair,
   };
 
   return (

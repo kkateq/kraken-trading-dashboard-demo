@@ -8,26 +8,15 @@ import {
   SideType,
   Leverage,
   BookPriceType,
-  BookDataType,
   WATCH_PAIRS,
 } from "./commons";
 import { useKrakenDataContext } from "./kraken_data_provider";
-import { Select, Option } from "@material-tailwind/react";
 
 const Bookview = () => {
-  const { book: __book, orderAmount, addOrder } = useKrakenDataContext();
-  const [selectedPair, setSelectedPair] = useState(WATCH_PAIRS[0]);
-  const [selectedBook, setSelectedBook] = useState<BookDataType | undefined>(
-    undefined
-  );
+  const { book, orderAmount, addOrder, selectedPair, setSelectedPair } =
+    useKrakenDataContext();
 
-  useEffect(() => {
-    if (__book && __book.pair === selectedPair) {
-      setSelectedBook(__book);
-    }
-  }, [__book, selectedPair]);
-
-  if (!selectedBook) {
+  if (!book) {
     return null;
   }
 
@@ -39,7 +28,7 @@ const Bookview = () => {
     bid_volume_total,
     ask_volume_total_percentage,
     bids_volume_total_percentage,
-  } = selectedBook;
+  } = book;
 
   const bidColor = "sky";
   const askColor = "pink";

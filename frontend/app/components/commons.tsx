@@ -53,6 +53,9 @@ export type BookDataType = {
   ask_volume_total_percentage: number;
   bids_volume_total_percentage: number;
   peg_price: number;
+  price_decimals: number;
+  qty_decimals: number;
+  checksum: number;
 };
 
 export type TradeResponseType = {

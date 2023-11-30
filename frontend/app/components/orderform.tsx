@@ -10,6 +10,8 @@ export const OrderForm = () => {
   const { orderAmount, scaleInOut, setOrderAmount, setScaleInOut, book } =
     useKrakenDataContext();
 
+  useEffect(() => {}, [book]);
+
   const handleOrderTypeSelection = (
     e: React.ChangeEvent<HTMLSelectElement>
   ) => {
