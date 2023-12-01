@@ -55,6 +55,8 @@ export type BookDataType = {
   price_decimals: number;
   qty_decimals: number;
   checksum: number;
+  best_bid: number;
+  best_ask: number;
 };
 
 export type TradeResponseType = {

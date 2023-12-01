@@ -1,10 +1,10 @@
-import { useState, useEffect } from "react";
 import { IconButton, Tooltip } from "@material-tailwind/react";
 
 import { useKrakenDataContext } from "./kraken_data_provider";
 
 export default function Trades() {
-  const { book, trades, roundPrice } = useKrakenDataContext();
+  const { book, trades, roundPrice, closeTrade, flattenTrade } =
+    useKrakenDataContext();
 
   const pegValue = book?.peg_price || 0;
 
@@ -57,7 +57,11 @@ export default function Trades() {
                     <td>
                       <div className="flex space-x-2 justify-end">
                         <Tooltip content="Close at market">
-                          <IconButton color="orange" size="sm">
+                          <IconButton
+                            color="orange"
+                            size="sm"
+                            onClick={() => closeTrade(trade)}
+                          >
                             <svg
                               xmlns="http://www.w3.org/2000/svg"
                               fill="none"
@@ -75,7 +79,11 @@ export default function Trades() {
                           </IconButton>
                         </Tooltip>
                         <Tooltip content="Flatten">
-                          <IconButton color="gray" size="sm">
+                          <IconButton
+                            color="gray"
+                            size="sm"
+                            onClick={() => flattenTrade(trade)}
+                          >
                             <svg
                               xmlns="http://www.w3.org/2000/svg"
                               fill="none"

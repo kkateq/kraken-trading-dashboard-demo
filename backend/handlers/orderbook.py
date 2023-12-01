@@ -13,6 +13,8 @@ def transform_book(book, depth, pair, checksum):
     bid_price = [i for i, _ in bids]
     ask_price = [i for i, _ in asks]
     peg_price = (bid_price[0] + ask_price[0]) / 2
+    best_bid = bid_price[0]
+    best_ask = ask_price[0]
     ask_volume.reverse()
     ask_price.reverse()
 
@@ -48,6 +50,8 @@ def transform_book(book, depth, pair, checksum):
         "qty_decimals": book["qty_decimals"],
         "valid": book["valid"],
         "checksum": checksum,
+        "best_bid": best_bid,
+        "best_ask": best_ask,
     }
 
 

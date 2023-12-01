@@ -4,7 +4,7 @@ import { Slider } from "@material-tailwind/react";
 import { useKrakenDataContext } from "./kraken_data_provider";
 
 export const OrderForm = () => {
-  const [orderType, setOrderType] = useState<OrderType>();
+  const [orderType, setOrderType] = useState<OrderType>(Order.limit);
   const [simpleForm, setSimpleForm] = useState<boolean>(true);
   const [price, setPrice] = useState(0);
   const [total, setTotal] = useState(0);
@@ -43,16 +43,20 @@ export const OrderForm = () => {
   };
 
   const handleBuy = () => {
-    const orderType = Side.buy;
-    addOrder(orderType as OrderType, Side.sell, price);
+    addOrder(orderType, Side.buy, price);
   };
 
   const handleSell = () => {
-    console.log("sell");
+    addOrder(orderType, Side.sell, price);
   };
   const handleCancelAll = () => {
     cancelAllPendingOrders();
   };
+
+  const handleCloseAtMarket = () => {
+    console.log("close at market");
+  };
+
   const handleFlatten = () => {
     console.log("flatten");
   };
@@ -170,13 +174,13 @@ export const OrderForm = () => {
         >
           CLOSE POSITIONS AT MARKET
         </button>
-        <button
+        {/* <button
           type="button"
           onClick={handleFlatten}
           className="rounded-md bg-gray-600 px-3 py-1 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
         >
           FLATTEN POSITIONS
-        </button>
+        </button> */}
 
         <div className="relative flex gap-x-3">
           <div className="flex h-6 items-center">

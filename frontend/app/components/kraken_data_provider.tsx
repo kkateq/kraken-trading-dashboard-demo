@@ -11,6 +11,7 @@ import moment from "moment";
 import useWebSocket, { ReadyState } from "react-use-websocket";
 import {
   OrderType,
+  Order,
   SideType,
   LogLevel,
   Message,
@@ -30,6 +31,8 @@ type KrakenDataContextType = {
   scaleInOut: boolean;
   setScaleInOut: (arg1: boolean) => void;
   addOrder: (ordertype: OrderType, side: SideType, price: number) => void;
+  flattenTrade: (trade: TradeResponseExtendedType) => void;
+  closeTrade: (trade: TradeResponseExtendedType) => void;
   cancelOrder: (id: string) => void;
   cancelAllPendingOrders: () => void;
   setOrderAmount: (arg0: number) => void;
@@ -292,6 +295,52 @@ export const KrakenDataProvider = ({ children }: Props) => {
     [sendOrderManagementMessage]
   );
 
+  const closeTrade = useCallback(
+    (trade: TradeResponseExtendedType) => {
+      if (selectedBook) {
+        const pair = selectedBook.pair;
+        sendOrderManagementMessage(
+          JSON.stringify({
+            operation: "add_order",
+            ordertype: Order.market,
+            side: trade.type === Side.sell ? Side.buy : Side.sell,
+            pair,
+            volume: trade.vol,
+            // @ts-ignore
+            leverage: Leverage[pair],
+            reduce_only: true,
+          })
+        );
+      }
+    },
+    [selectedBook, sendOrderManagementMessage]
+  );
+
+  const flattenTrade = useCallback(
+    (trade: TradeResponseExtendedType) => {
+      if (selectedBook) {
+        const pair = selectedBook.pair;
+        sendOrderManagementMessage(
+          JSON.stringify({
+            operation: "add_order",
+            ordertype: Order.limit,
+            side: trade.type === Side.sell ? Side.buy : Side.sell,
+            price:
+              trade.type === Side.sell
+                ? selectedBook.best_ask
+                : selectedBook.best_bid,
+            pair,
+            volume: trade.vol,
+            // @ts-ignore
+            leverage: Leverage[pair],
+            reduce_only: true,
+          })
+        );
+      }
+    },
+    [selectedBook, sendOrderManagementMessage]
+  );
+
   const cancelAllPendingOrders = useCallback(() => {
     sendOrderManagementMessage(
       JSON.stringify({
@@ -330,6 +379,8 @@ export const KrakenDataProvider = ({ children }: Props) => {
     totalTradesCount,
     roundPrice,
     priceToTradesTransposed,
+    closeTrade,
+    flattenTrade,
   };
 
   return (
