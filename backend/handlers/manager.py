@@ -205,6 +205,7 @@ async def get_kraken_manager(pairs, config) -> Manager:
     try:
         await manager.run()
     except Exception:
+        logging.exception(traceback.format_exc())
         manager.save_exit(
             reason=f"manageBot.run() has ended: {traceback.format_exc()}",
         )

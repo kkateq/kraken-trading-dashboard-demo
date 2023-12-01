@@ -1,28 +1,33 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import {
   Order,
   OrderType,
   Side,
   SideType,
-  Leverage,
   BookPriceType,
   WATCH_PAIRS,
 } from "./commons";
 import { useKrakenDataContext } from "./kraken_data_provider";
 
 const Bookview = () => {
-  const { book, orderAmount, addOrder, selectedPair, setSelectedPair } =
-    useKrakenDataContext();
+  const {
+    book,
+    addOrder,
+    selectedPair,
+    setSelectedPair,
+    scaleInOut,
+    trades,
+    totalTradesCount,
+  } = useKrakenDataContext();
 
   if (!book) {
     return null;
   }
 
   const {
-    data,
     pair,
+    data,
     depth,
     ask_volume_total,
     bid_volume_total,
@@ -37,69 +42,56 @@ const Bookview = () => {
     side: SideType,
     index: number,
     depth: number
-  ): string => {
-    const pegLevel = depth;
-    if (side == Side.buy.toString() && index < pegLevel) {
-      return Order.stop;
-    }
-    if (side == Side.buy.toString() && index >= pegLevel) {
-      return Order.limit;
-    }
-    if (side == Side.sell.toString() && index < pegLevel) {
-      return Order.limit;
-    }
-    if (side == Side.sell.toString() && index >= pegLevel) {
-      return Order.stop;
-    }
-    return Order.market;
-  };
+  ): string | undefined => {
+    const pegLevel = depth - 1;
+    const aboveMid = index <= pegLevel;
+    const belowMid = index > pegLevel;
 
-  const handleBuyStop = (index: number, price: number) => {};
-  const handleSellStop = (index: number, price: number) => {};
+    if (side === Side.buy) {
+      if (belowMid) {
+        return Order.limit;
+      }
+      if (aboveMid && totalTradesCount.sells > 0) {
+        return Order.stopLoss;
+      }
+    }
+    if (side === Side.sell) {
+      if (aboveMid) {
+        return Order.limit;
+      }
+      if (belowMid && totalTradesCount.buys > 0) {
+        return Order.stopLoss;
+      }
+    }
+
+    return undefined;
+  };
 
   const handleBidClick = (index: number, price: number) => {
     const orderType = getOrderType(Side.buy, index, depth);
+    if (orderType) {
+      console.log("OrderType: " + Side.buy + " - " + orderType);
 
-    // @ts-ignore
-    const leverage = Leverage[pair];
-    const reduceOnly = orderType === Order.stop;
-    if (!reduceOnly) {
-      addOrder(
-        orderType as OrderType,
-        Side.buy,
-        price,
-        pair,
-        orderAmount,
-        leverage,
-        reduceOnly
-      );
+      // addOrder(orderType as OrderType, Side.buy, price);
     }
   };
 
   const handleAskClick = (index: number, price: number) => {
     const orderType = getOrderType(Side.sell, index, depth);
+    if (orderType) {
+      console.log("OrderType: " + Side.sell + " - " + orderType);
 
-    // @ts-ignore
-    const leverage = Leverage[pair];
-    const reduceOnly = orderType === Order.stop;
-    addOrder(
-      orderType as OrderType,
-      Side.sell,
-      price,
-      pair,
-      orderAmount,
-      leverage,
-      reduceOnly
-    );
+      // addOrder(orderType as OrderType, Side.sell, price);
+    }
   };
 
   const handleBuyMarketClick = (price: number) => {
-    const orderType = Order.market;
-    console.log("buy" + "|" + orderType + "|" + price);
+    console.log("market");
+    // addOrder(Order.market, Side.buy, price);
   };
   const handleSellMarketClick = (price: number) => {
-    const orderType = Order.market;
-    console.log("sell" + "|" + orderType + "|" + price);
+    console.log("market");
+    // addOrder(Order.market, Side.sell, price);
   };
 
   const handlePairChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -108,7 +100,7 @@ const Bookview = () => {
 
   return (
     <div className="flex rounded text-sm" style={{ height: "95vh" }}>
-      <div className="ml-2" style={{ width: "400px" }}>
+      <div className="ml-2" style={{ width: "500px" }}>
         <div className="space-x-1 mt-1 flex">
           <div className="bold mr-4">
             <div className="flex border-solid border-2 rounded border-gray-400">
@@ -137,6 +129,7 @@ const Bookview = () => {
             {data.map((x: BookPriceType, i) => (
               <div key={i} className="divide-y">
                 <div className="border-1 flex space-x-2 divide-x">
+                  <div>orders</div>
                   <div
                     className={
                       i < depth
@@ -160,18 +153,21 @@ const Bookview = () => {
                   >
                     {x.ask}
                   </div>
+                  <div>orders</div>
                 </div>
                 {i === depth - 1 ? (
                   <div className="border-1 flex space-x-2">
+                    <div>orders</div>
                     <div
-                      className="p-3 flex-1 pr-2 text-right text-blue-800 cursor-pointer hover:bg-blue-600"
+                      className="p-2 flex-1 pr-2 text-right text-blue-800 cursor-pointer hover:bg-blue-600"
                       onClick={() => handleBuyMarketClick(x.price)}
                     ></div>
                     <div className="flex-1 text-center text-gray-500"></div>
                     <div
-                      className="p-3 flex-1 pl-2 text-left text-pink-800 cursor-pointer hover:bg-pink-600"
+                      className="p-2 flex-1 pl-2 text-left text-pink-800 cursor-pointer hover:bg-pink-600"
                       onClick={() => handleSellMarketClick(x.price)}
                     ></div>
+                    <div>orders</div>
                   </div>
                 ) : null}
               </div>

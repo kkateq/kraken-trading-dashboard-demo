@@ -6,6 +6,7 @@ import { useKrakenDataContext } from "./kraken_data_provider";
 export const OrderForm = () => {
   const [orderType, setOrderType] = useState<OrderType>();
   const [simpleForm, setSimpleForm] = useState<boolean>(true);
+  const [price, setPrice] = useState(0);
   const [total, setTotal] = useState(0);
   const {
     orderAmount,
@@ -17,7 +18,11 @@ export const OrderForm = () => {
     addOrder,
   } = useKrakenDataContext();
 
-  useEffect(() => {}, [book]);
+  useEffect(() => {
+    if (book?.pair) {
+      setPrice(book.peg_price);
+    }
+  }, [book?.pair, book?.peg_price]);
 
   const handleOrderTypeSelection = (
     e: React.ChangeEvent<HTMLSelectElement>
@@ -38,20 +43,10 @@ export const OrderForm = () => {
   };
 
   const handleBuy = () => {
-    // const orderType = Side.buy;
-    // // @ts-ignore
-    // const leverage = Leverage[pair];
-    // const reduceOnly = orderType === Order.stop;
-    // addOrder(
-    //   orderType as OrderType,
-    //   Side.sell,
-    //   price,
-    //   pair,
-    //   orderAmount,
-    //   leverage,
-    //   reduceOnly
-    // );
+    const orderType = Side.buy;
+    addOrder(orderType as OrderType, Side.sell, price);
   };
+
   const handleSell = () => {
     console.log("sell");
   };
@@ -64,6 +59,10 @@ export const OrderForm = () => {
 
   const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setOrderAmount(e.target.value as any);
+  };
+
+  const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPrice(e.target.value as any);
   };
 
   useEffect(() => {
@@ -129,9 +128,18 @@ export const OrderForm = () => {
             >
               <option value={Order.limit}>limit</option>
               <option value={Order.market}>market</option>
-              <option value={Order.stop}>stop</option>
+              <option value={Order.stopLoss}>stop loss</option>
+              <option value={Order.takeProfit}>take profit loss</option>
             </select>
 
+            <input
+              type="number"
+              step="0.1"
+              min="0.001"
+              value={price}
+              onChange={handlePriceChange}
+              className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 p-2"
+            ></input>
             <button
               type="button"
               onClick={handleBuy}

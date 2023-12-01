@@ -4,9 +4,7 @@ import { IconButton, Tooltip } from "@material-tailwind/react";
 import { useKrakenDataContext } from "./kraken_data_provider";
 
 export default function Trades() {
-  const { book, trades } = useKrakenDataContext();
-
-  const round = (v: number, prec: number = 100) => Math.round(v * prec) / prec;
+  const { book, trades, roundPrice } = useKrakenDataContext();
 
   const pegValue = book?.peg_price || 0;
 
@@ -51,11 +49,13 @@ export default function Trades() {
                     >
                       {trade.type}
                     </td>
-                    <td>{round(trade.vol)}</td>
-                    <td>{round(trade.cost / trade.vol, 10000)}</td>
-                    <td>{round(trade.cost)}</td>
-                    <td>{round(trade.leverage)}</td>
-                    <td className={`font-bold ${pegColor}`}>{round(pl)}$</td>
+                    <td>{roundPrice(trade.vol)}</td>
+                    <td>{roundPrice(trade.entryPrice)}</td>
+                    <td>{roundPrice(trade.cost)}</td>
+                    <td>{roundPrice(trade.leverage)}</td>
+                    <td className={`font-bold ${pegColor}`}>
+                      {roundPrice(pl)}$
+                    </td>
                     <td>
                       <div className="flex space-x-2 justify-end">
                         <Tooltip content="Close at market">

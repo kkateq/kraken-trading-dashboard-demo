@@ -5,7 +5,6 @@ export const Side = Object.freeze({
 
 export const Order = Object.freeze({
   limit: "limit",
-  stop: "stop",
   stopLoss: "stop-loss",
   stopLossLimit: "stop-loss-limit",
   takeProfit: "take-profit",
@@ -64,6 +63,15 @@ export type TradeResponseType = {
   cost: number;
   leverage: number;
   pair: string;
+};
+
+export type TradeResponseExtendedType = {
+  type: "sell" | "buy";
+  vol: number;
+  cost: number;
+  leverage: number;
+  pair: string;
+  entryPrice: number;
 };
 
 export type OrderResponseType = {

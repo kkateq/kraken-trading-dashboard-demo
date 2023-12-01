@@ -16,9 +16,12 @@ import {
   Message,
   noop,
   BookDataType,
+  TradeResponseExtendedType,
   TradeResponseType,
   OrderResponseType,
   WATCH_PAIRS,
+  Side,
+  Leverage,
 } from "./commons";
 
 type KrakenDataContextType = {
@@ -26,15 +29,7 @@ type KrakenDataContextType = {
   orderAmount: number;
   scaleInOut: boolean;
   setScaleInOut: (arg1: boolean) => void;
-  addOrder: (
-    ordertype: OrderType,
-    side: SideType,
-    price: number,
-    pair: string,
-    volume: number,
-    leverage: any,
-    reduce_only: boolean
-  ) => void;
+  addOrder: (ordertype: OrderType, side: SideType, price: number) => void;
   cancelOrder: (id: string) => void;
   cancelAllPendingOrders: () => void;
   setOrderAmount: (arg0: number) => void;
@@ -47,10 +42,16 @@ type KrakenDataContextType = {
   logMessages: Message[];
   fetchOrders: () => void;
   fetchTrades: () => void;
-  trades: TradeResponseType[];
+  trades: TradeResponseExtendedType[];
   orders: OrderResponseType[];
   setSelectedPair: (p: string) => void;
   selectedPair: string;
+  totalTradesCount: {
+    total: number;
+    sells: number;
+    buys: number;
+  };
+  roundPrice: (price: number) => number;
 };
 
 const KrakenContext = createContext<KrakenDataContextType>({
@@ -74,6 +75,12 @@ const KrakenContext = createContext<KrakenDataContextType>({
   orders: [],
   setSelectedPair: noop,
   selectedPair: WATCH_PAIRS[0],
+  roundPrice: (price: number) => price,
+  totalTradesCount: {
+    total: 0,
+    sells: 0,
+    buys: 0,
+  },
 });
 
 export const useKrakenDataContext = () => useContext(KrakenContext);
@@ -103,6 +110,11 @@ export const KrakenDataProvider = ({ children }: Props) => {
   const [selectedBook, setSelectedBook] = useState<BookDataType | undefined>(
     undefined
   );
+  const [totalTradesCount, setTotalTradesCount] = useState({
+    total: 0,
+    sells: 0,
+    buys: 0,
+  });
 
   const addLogMessage = (text: string, level: LogLevel = LogLevel.INFO) => {
     // @ts-ignore
@@ -142,39 +154,69 @@ export const KrakenDataProvider = ({ children }: Props) => {
       });
   }, []);
 
+  const roundPrice = useCallback(
+    (value: number) => {
+      if (selectedBook?.price_decimals) {
+        const precision = Math.pow(10, selectedBook?.price_decimals);
+
+        if (precision) {
+          return Math.round(value * precision) / precision;
+        }
+      }
+      return value;
+    },
+    [selectedBook?.price_decimals]
+  );
+
   const fetchTrades = useCallback(() => {
     fetch("http://localhost:8000/positions")
       .then((response) => response.json())
       .then((data) => {
-        setTrades(data);
+        const updateData = data.map(
+          (trade: TradeResponseType): TradeResponseExtendedType => ({
+            ...trade,
+            entryPrice: roundPrice(trade.cost / trade.vol),
+          })
+        );
+
+        setTrades(updateData);
+
+        const buys = data.filter(
+          (x: TradeResponseType) => x.type === Side.buy
+        ).length;
+        const sells = data.filter(
+          (x: TradeResponseType) => x.type === Side.sell
+        ).length;
+        setTotalTradesCount({
+          total: data.length,
+          sells,
+          buys,
+        });
       })
       .catch((err) => {
         addLogMessage(err.message, LogLevel.ERROR);
       });
-  }, []);
+  }, [roundPrice, selectedBook?.peg_price]);
+
+  const refetchOrdersAndTrades = useCallback(() => {
+    console.log("fetching data");
+    fetchTrades();
+    fetchOrders();
+  }, [fetchOrders, fetchTrades]);
 
   useEffect(() => {
-    if (
-      orderManagementReadyState === ReadyState.OPEN &&
-      orderBookReadyState === ReadyState.OPEN
-    ) {
-      fetchTrades();
-      fetchOrders();
-    }
-  }, [
-    orderManagementReadyState,
-    orderBookReadyState,
-    fetchTrades,
-    fetchOrders,
-  ]);
+    refetchOrdersAndTrades();
+  }, []);
 
   useEffect(() => {
     if (orderManagementLastMessage !== null) {
       addLogMessage(orderManagementLastMessage.data);
-      fetchTrades();
-      fetchOrders();
+      debugger;
+      if (orderManagementLastMessage.data["count"] === "1") {
+        refetchOrdersAndTrades();
+      }
     }
-  }, [fetchOrders, fetchTrades, orderManagementLastMessage]);
+  }, [orderManagementLastMessage]);
 
   useEffect(() => {
     const __book = orderBookLastMessage?.data
@@ -186,34 +228,30 @@ export const KrakenDataProvider = ({ children }: Props) => {
       __book.pair === selectedPair &&
       __book.checksum !== selectedBook?.checksum
     ) {
-      setSelectedBook(__book);
+      setSelectedBook((p) => __book);
     }
   }, [orderBookLastMessage, selectedBook?.checksum, selectedPair]);
 
   const addOrder = useCallback(
-    (
-      ordertype: OrderType,
-      side: SideType,
-      price: number,
-      pair: string,
-      volume: number,
-      leverage: number,
-      reduce_only: boolean
-    ) => {
-      sendOrderManagementMessage(
-        JSON.stringify({
-          operation: "add_order",
-          ordertype: ordertype.toString(),
-          side,
-          price,
-          pair,
-          volume,
-          leverage,
-          reduce_only,
-        })
-      );
+    (ordertype: OrderType, side: SideType, price: number) => {
+      if (selectedBook) {
+        const pair = selectedBook.pair;
+        sendOrderManagementMessage(
+          JSON.stringify({
+            operation: "add_order",
+            ordertype: ordertype.toString(),
+            side,
+            price,
+            pair,
+            volume: orderAmount,
+            // @ts-ignore
+            leverage: Leverage[pair],
+            reduce_only: scaleInOut,
+          })
+        );
+      }
     },
-    [sendOrderManagementMessage]
+    [selectedBook, sendOrderManagementMessage, orderAmount, scaleInOut]
   );
 
   const cancelOrder = useCallback(
@@ -263,6 +301,8 @@ export const KrakenDataProvider = ({ children }: Props) => {
     setSelectedPair,
     selectedPair,
     cancelAllPendingOrders,
+    totalTradesCount,
+    roundPrice,
   };
 
   return (
