@@ -16,9 +16,7 @@ const Bookview = () => {
     addOrder,
     selectedPair,
     setSelectedPair,
-    scaleInOut,
-    trades,
-    totalTradesCount,
+    priceToTradesTransposed,
   } = useKrakenDataContext();
 
   if (!book) {
@@ -26,7 +24,6 @@ const Bookview = () => {
   }
 
   const {
-    pair,
     data,
     depth,
     ask_volume_total,
@@ -51,16 +48,10 @@ const Bookview = () => {
       if (belowMid) {
         return Order.limit;
       }
-      if (aboveMid && totalTradesCount.sells > 0) {
-        return Order.stopLoss;
-      }
     }
     if (side === Side.sell) {
       if (aboveMid) {
         return Order.limit;
-      }
-      if (belowMid && totalTradesCount.buys > 0) {
-        return Order.stopLoss;
       }
     }
 
@@ -68,34 +59,66 @@ const Bookview = () => {
   };
 
   const handleBidClick = (index: number, price: number) => {
+    const check = priceToTradesTransposed[price];
+    if (check) {
+      console.log("trade exists");
+      return;
+    }
     const orderType = getOrderType(Side.buy, index, depth);
     if (orderType) {
       console.log("OrderType: " + Side.buy + " - " + orderType);
 
-      // addOrder(orderType as OrderType, Side.buy, price);
+      addOrder(orderType as OrderType, Side.buy, price);
     }
   };
 
   const handleAskClick = (index: number, price: number) => {
+    const check = priceToTradesTransposed[price];
+    if (check) {
+      console.log("trade exists");
+      return;
+    }
     const orderType = getOrderType(Side.sell, index, depth);
     if (orderType) {
       console.log("OrderType: " + Side.sell + " - " + orderType);
 
-      // addOrder(orderType as OrderType, Side.sell, price);
+      addOrder(orderType as OrderType, Side.sell, price);
     }
   };
 
   const handleBuyMarketClick = (price: number) => {
     console.log("market");
-    // addOrder(Order.market, Side.buy, price);
+    addOrder(Order.market, Side.buy, price);
   };
   const handleSellMarketClick = (price: number) => {
     console.log("market");
-    // addOrder(Order.market, Side.sell, price);
+    addOrder(Order.market, Side.sell, price);
   };
 
   const handlePairChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setSelectedPair(e.target.value as any);
+  };
+
+  const renderSellPosition = (price: number) => {
+    const pos = priceToTradesTransposed[price];
+    if (pos) {
+      return pos.type === "sell" ? (
+        <div className="flex pl-2 text-red-400 border-2 border-solid border-red-200 text-xs">
+          <div>SL|{Math.round(pos.vol)}</div>
+        </div>
+      ) : null;
+    }
+    return <span></span>;
+  };
+
+  const renderBuyPosition = (price: number) => {
+    const pos = priceToTradesTransposed[price];
+    if (pos) {
+      return pos.type === "buy" ? (
+        <div className="flex pr-2 bg-blue-200"> BL|{Math.round(pos.vol)}</div>
+      ) : null;
+    }
+    return <span></span>;
   };
 
   return (
@@ -129,7 +152,7 @@ const Bookview = () => {
             {data.map((x: BookPriceType, i) => (
               <div key={i} className="divide-y">
                 <div className="border-1 flex space-x-2 divide-x">
-                  <div>orders</div>
+                  <div className="flex-1">{renderBuyPosition(x.price)}</div>
                   <div
                     className={
                       i < depth
@@ -153,11 +176,11 @@ const Bookview = () => {
                   >
                     {x.ask}
                   </div>
-                  <div>orders</div>
+                  <div className="flex-1">{renderSellPosition(x.price)}</div>
                 </div>
                 {i === depth - 1 ? (
                   <div className="border-1 flex space-x-2">
-                    <div>orders</div>
+                    <div className="flex-1"></div>
                     <div
                       className="p-2 flex-1 pr-2 text-right text-blue-800 cursor-pointer hover:bg-blue-600"
                       onClick={() => handleBuyMarketClick(x.price)}
@@ -167,7 +190,7 @@ const Bookview = () => {
                       className="p-2 flex-1 pl-2 text-left text-pink-800 cursor-pointer hover:bg-pink-600"
                       onClick={() => handleSellMarketClick(x.price)}
                     ></div>
-                    <div>orders</div>
+                    <div className="flex-1"></div>
                   </div>
                 ) : null}
               </div>

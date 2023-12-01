@@ -52,6 +52,13 @@ type KrakenDataContextType = {
     buys: number;
   };
   roundPrice: (price: number) => number;
+  priceToTradesTransposed: {
+    [price: number]: {
+      side: SideType;
+      status: "order" | "position";
+      type: OrderType;
+    };
+  };
 };
 
 const KrakenContext = createContext<KrakenDataContextType>({
@@ -81,6 +88,7 @@ const KrakenContext = createContext<KrakenDataContextType>({
     sells: 0,
     buys: 0,
   },
+  priceToTradesTransposed: {},
 });
 
 export const useKrakenDataContext = () => useContext(KrakenContext);
@@ -91,6 +99,7 @@ type Props = {
 
 export const KrakenDataProvider = ({ children }: Props) => {
   const [messages, setMessageHistory] = useState([]);
+  const [priceToTradesTransposed, setPriceToTradesTransposed] = useState({});
   const [orderBookSocketUrl] = useState("ws://localhost:8000/ws_orderbook");
   const { lastMessage: orderBookLastMessage, readyState: orderBookReadyState } =
     useWebSocket(orderBookSocketUrl);
@@ -181,6 +190,23 @@ export const KrakenDataProvider = ({ children }: Props) => {
 
         setTrades(updateData);
 
+        // debugger;
+        const transposed = updateData.reduce((acc, trade) => {
+          // @ts-ignore
+          if (!acc) {
+            acc = {};
+          }
+          if (trade) {
+            acc = {
+              ...acc,
+              [trade.entryPrice]: trade,
+            };
+          }
+          return acc;
+        }, {});
+
+        setPriceToTradesTransposed(transposed);
+
         const buys = data.filter(
           (x: TradeResponseType) => x.type === Side.buy
         ).length;
@@ -196,7 +222,7 @@ export const KrakenDataProvider = ({ children }: Props) => {
       .catch((err) => {
         addLogMessage(err.message, LogLevel.ERROR);
       });
-  }, [roundPrice, selectedBook?.peg_price]);
+  }, [roundPrice]);
 
   const refetchOrdersAndTrades = useCallback(() => {
     console.log("fetching data");
@@ -216,7 +242,7 @@ export const KrakenDataProvider = ({ children }: Props) => {
         refetchOrdersAndTrades();
       }
     }
-  }, [orderManagementLastMessage]);
+  }, [orderManagementLastMessage, refetchOrdersAndTrades]);
 
   useEffect(() => {
     const __book = orderBookLastMessage?.data
@@ -303,6 +329,7 @@ export const KrakenDataProvider = ({ children }: Props) => {
     cancelAllPendingOrders,
     totalTradesCount,
     roundPrice,
+    priceToTradesTransposed,
   };
 
   return (

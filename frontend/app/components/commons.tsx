@@ -58,7 +58,7 @@ export type BookDataType = {
 };
 
 export type TradeResponseType = {
-  type: "sell" | "buy";
+  type: SideType;
   vol: number;
   cost: number;
   leverage: number;
@@ -66,7 +66,7 @@ export type TradeResponseType = {
 };
 
 export type TradeResponseExtendedType = {
-  type: "sell" | "buy";
+  type: SideType;
   vol: number;
   cost: number;
   leverage: number;

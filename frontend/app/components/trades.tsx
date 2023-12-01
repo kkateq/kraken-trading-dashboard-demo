@@ -22,7 +22,6 @@ export default function Trades() {
               <th>Volume</th>
               <th>Entry Price</th>
               <th>Cost</th>
-              <th>Lev</th>
               <th>P/L</th>
               <th></th>
             </tr>
@@ -52,7 +51,6 @@ export default function Trades() {
                     <td>{roundPrice(trade.vol)}</td>
                     <td>{roundPrice(trade.entryPrice)}</td>
                     <td>{roundPrice(trade.cost)}</td>
-                    <td>{roundPrice(trade.leverage)}</td>
                     <td className={`font-bold ${pegColor}`}>
                       {roundPrice(pl)}$
                     </td>
