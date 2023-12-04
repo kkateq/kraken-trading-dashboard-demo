@@ -55,6 +55,8 @@ type KrakenDataContextType = {
     buys: number;
   };
   roundPrice: (price: number) => number;
+  closeAllTrades: () => void;
+  flattenAllTrades: () => void;
   priceToTradesTransposed: {
     [price: number]: {
       side: SideType;
@@ -92,6 +94,10 @@ const KrakenContext = createContext<KrakenDataContextType>({
     buys: 0,
   },
   priceToTradesTransposed: {},
+  closeAllTrades: noop,
+  flattenTrade: noop,
+  closeTrade: noop,
+  flattenAllTrades: noop,
 });
 
 export const useKrakenDataContext = () => useContext(KrakenContext);
@@ -193,7 +199,6 @@ export const KrakenDataProvider = ({ children }: Props) => {
 
         setTrades(updateData);
 
-        // debugger;
         const transposed = updateData.reduce((acc, trade) => {
           // @ts-ignore
           if (!acc) {
@@ -240,7 +245,7 @@ export const KrakenDataProvider = ({ children }: Props) => {
   useEffect(() => {
     if (orderManagementLastMessage !== null) {
       addLogMessage(orderManagementLastMessage.data);
-      debugger;
+
       if (orderManagementLastMessage.data["count"] === "1") {
         refetchOrdersAndTrades();
       }
@@ -265,6 +270,11 @@ export const KrakenDataProvider = ({ children }: Props) => {
     (ordertype: OrderType, side: SideType, price: number) => {
       if (selectedBook) {
         const pair = selectedBook.pair;
+        const { sells, buys } = totalTradesCount;
+        const oppositeOrder =
+          (side === Side.buy && sells > 0) || (side === Side.sell && buys > 0);
+        const reduceOnly = oppositeOrder ? scaleInOut : false;
+
         sendOrderManagementMessage(
           JSON.stringify({
             operation: "add_order",
@@ -275,7 +285,7 @@ export const KrakenDataProvider = ({ children }: Props) => {
             volume: orderAmount,
             // @ts-ignore
             leverage: Leverage[pair],
-            reduce_only: scaleInOut,
+            reduce_only: reduceOnly,
           })
         );
       }
@@ -341,6 +351,14 @@ export const KrakenDataProvider = ({ children }: Props) => {
     [selectedBook, sendOrderManagementMessage]
   );
 
+  const closeAllTrades = useCallback(() => {
+    trades.forEach((trade) => closeTrade(trade));
+  }, [closeTrade, trades]);
+
+  const flattenAllTrades = useCallback(() => {
+    trades.forEach((trade) => flattenTrade(trade));
+  }, [flattenTrade, trades]);
+
   const cancelAllPendingOrders = useCallback(() => {
     sendOrderManagementMessage(
       JSON.stringify({
@@ -381,6 +399,8 @@ export const KrakenDataProvider = ({ children }: Props) => {
     priceToTradesTransposed,
     closeTrade,
     flattenTrade,
+    closeAllTrades,
+    flattenAllTrades,
   };
 
   return (

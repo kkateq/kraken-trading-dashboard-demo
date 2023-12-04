@@ -14,6 +14,8 @@ export const OrderForm = () => {
     setOrderAmount,
     setScaleInOut,
     cancelAllPendingOrders,
+    closeAllTrades,
+    flattenAllTrades,
     book,
     addOrder,
   } = useKrakenDataContext();
@@ -53,12 +55,12 @@ export const OrderForm = () => {
     cancelAllPendingOrders();
   };
 
-  const handleCloseAtMarket = () => {
-    console.log("close at market");
+  const handleCloseAllPositions = () => {
+    closeAllTrades();
   };
 
-  const handleFlatten = () => {
-    console.log("flatten");
+  const handleFlattenAllPositions = () => {
+    flattenAllTrades();
   };
 
   const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -169,18 +171,18 @@ export const OrderForm = () => {
         </button>
         <button
           type="button"
-          onClick={handleCancelAll}
+          onClick={handleCloseAllPositions}
           className="rounded-md bg-orange-600 px-3 py-1 text-sm font-semibold text-white shadow-sm hover:bg-gray-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
         >
           CLOSE POSITIONS AT MARKET
         </button>
-        {/* <button
+        <button
           type="button"
-          onClick={handleFlatten}
+          onClick={handleFlattenAllPositions}
           className="rounded-md bg-gray-600 px-3 py-1 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
         >
           FLATTEN POSITIONS
-        </button> */}
+        </button>
 
         <div className="relative flex gap-x-3">
           <div className="flex h-6 items-center">
