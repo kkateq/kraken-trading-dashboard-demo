@@ -7,8 +7,32 @@ import { useKrakenDataContext } from "./kraken_data_provider";
 
 export default function Orders() {
   const { orders, cancelOrder, fetchOrders } = useKrakenDataContext();
+  const [cancellingProgress, setCancellingProgress] = useState({});
 
-  const handleOrderCancel = (id: string) => () => cancelOrder(id);
+  const handleOrderCancel = (id: string) => () => {
+    setCancellingProgress((prev) => ({ ...prev, [id]: true }));
+    cancelOrder(id);
+  };
+
+  useEffect(() => {
+    if (orders.length === 0) {
+      setCancellingProgress({});
+    } else {
+      const progressOrders = Object.keys(cancellingProgress);
+
+      if (progressOrders.length > 0) {
+        const progressNew = { ...cancellingProgress };
+        progressOrders.forEach((id: string) => {
+          const order = orders.find((o) => o.id === id);
+          if (!order) {
+            delete progressNew[id];
+          }
+        });
+
+        setCancellingProgress(progressNew);
+      }
+    }
+  }, [orders]);
 
   return (
     <div className="flex flex-col overflow-auto h-full bg-gray-200 border-2 rounded border-gray-400 p-2 ">
@@ -72,6 +96,7 @@ export default function Orders() {
                         size="sm"
                         variant="outlined"
                         onClick={handleOrderCancel(id)}
+                        disabled={cancellingProgress[id] || false}
                       >
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
