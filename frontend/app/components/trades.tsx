@@ -3,7 +3,7 @@ import { IconButton, Tooltip } from "@material-tailwind/react";
 import { useKrakenDataContext } from "./kraken_data_provider";
 
 export default function Trades() {
-  const { book, trades, roundPrice, closeTrade, flattenTrade } =
+  const { book, trades, roundPrice, closeTrade, flattenTrade, fetchTrades } =
     useKrakenDataContext();
 
   const pegValue = book?.peg_price || 0;
@@ -11,9 +11,35 @@ export default function Trades() {
   return (
     <div className="flex flex-col overflow-auto h-full bg-gray-200 border-2 rounded border-blue-400 p-2">
       <div>
-        <h5 className="text-xs text-gray-400 bold text-center mb-1">
-          POSITIONS
-        </h5>
+        <div className="items-center flex mb-2">
+          <div className="flex-1">
+            <h5 className="text-xs text-gray-400 bold text-center mb-1">
+              POSITIONS
+            </h5>
+          </div>
+
+          <Tooltip content="Refresh">
+            <button
+              onClick={() => fetchTrades()}
+              className="border-2 rounded border-gray-400 hover:bg-gray-300"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={1.5}
+                stroke="gray"
+                className="w-6 h-6"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"
+                />
+              </svg>
+            </button>
+          </Tooltip>
+        </div>
         <table className="w-full min-w-max table-auto text-left text-xs ">
           <thead className="">
             <tr>

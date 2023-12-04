@@ -156,7 +156,7 @@ const Bookview = () => {
                   <div
                     className={
                       i < depth
-                        ? "flex-1 pr-2 text-right text-blue-800 cursor-pointer hover:bg-cyan-100"
+                        ? "flex-1 pr-2 text-right text-blue-800"
                         : "flex-1 pr-2 text-right text-blue-800 cursor-pointer hover:bg-blue-100"
                     }
                     onClick={() => handleBidClick(i, x.price)}
@@ -170,7 +170,7 @@ const Bookview = () => {
                     className={
                       i < depth
                         ? "flex-1 pl-2 text-left text-pink-800 cursor-pointer hover:bg-pink-100"
-                        : "flex-1 pl-2 text-left text-pink-800 cursor-pointer hover:bg-orange-100"
+                        : "flex-1 pl-2 text-left text-pink-800"
                     }
                     onClick={() => handleAskClick(i, x.price)}
                   >
