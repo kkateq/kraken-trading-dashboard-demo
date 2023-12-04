@@ -245,8 +245,8 @@ export const KrakenDataProvider = ({ children }: Props) => {
   useEffect(() => {
     if (orderManagementLastMessage !== null) {
       addLogMessage(orderManagementLastMessage.data);
-
-      if (orderManagementLastMessage.data["count"] === "1") {
+      const obj = JSON.parse(orderManagementLastMessage.data);
+      if (obj && (obj["txid"] || obj["count"])) {
         refetchOrdersAndTrades();
       }
     }
@@ -290,7 +290,13 @@ export const KrakenDataProvider = ({ children }: Props) => {
         );
       }
     },
-    [selectedBook, sendOrderManagementMessage, orderAmount, scaleInOut]
+    [
+      selectedBook,
+      totalTradesCount,
+      scaleInOut,
+      sendOrderManagementMessage,
+      orderAmount,
+    ]
   );
 
   const cancelOrder = useCallback(
