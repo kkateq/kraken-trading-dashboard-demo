@@ -28,7 +28,16 @@ const Bookview = () => {
     if (orders.length === 0 && Object.keys(temporaryOrders).length > 0) {
       setTemporaryOrders({});
     } else {
-      // const orderDescr;
+      const newOrders = {};
+      orders.forEach((order) => {
+        newOrders[order.value.descr.price] = {
+          side: order.value.descr.type,
+          type: order.value.vol,
+          vol: orderAmount,
+        };
+      });
+
+      setTemporaryOrders(newOrders);
     }
   }, [orders]);
 
