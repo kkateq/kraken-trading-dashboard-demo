@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useState } from "react";
 import { useKrakenDataContext } from "./kraken_data_provider";
-import { useState } from "react";
+import Spread from "./spread";
 import { WATCH_PAIRS, INTERVALS, LogLevel } from "./commons";
-import useWebSocket, { ReadyState } from "react-use-websocket";
+import useWebSocket from "react-use-websocket";
 import WsStatusIcon from "./wsstatusicon";
 import { debounce } from "lodash";
 
@@ -92,6 +92,7 @@ export default function Chart() {
         </div>
       </div>
       {!selectedPairData ? <div>No data</div> : <div>Data</div>}
+      <Spread pair={pair} />
     </div>
   );
 }

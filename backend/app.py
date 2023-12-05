@@ -12,6 +12,7 @@ from handlers.orderbook import start_book
 from handlers.orders import start_orders
 from handlers.trades import start_trades
 from handlers.ohlc import start_ohlc
+from handlers.spread import start_spread
 from handlers.manager import get_kraken_manager
 import uvicorn
 from starlette.config import Config
@@ -72,6 +73,14 @@ class TradesWebsocketEndpoint(WebSocketEndpoint):
     async def on_connect(self, websocket: WebSocket) -> None:
         await websocket.accept()
         await start_trades(pairs, websocket, config)
+
+
+class SpreadWebsocketEndpoint(WebSocketEndpoint):
+    encoding = "json"
+
+    async def on_connect(self, websocket: WebSocket) -> None:
+        await websocket.accept()
+        await start_spread(pairs, websocket, config)
 
 
 class OperateWebsocketEndpoint(WebSocketEndpoint):
@@ -194,6 +203,7 @@ if __name__ == "__main__":
             WebSocketRoute("/ws_trades", TradesWebsocketEndpoint),
             WebSocketRoute("/ws_create", OperateWebsocketEndpoint),
             WebSocketRoute("/ws_ohlc", OHLCWebsocketEndpoint),
+            WebSocketRoute("/ws_spread", SpreadWebsocketEndpoint),
             Route("/orders", endpoint=list_orders, methods=["GET"]),
             Route("/positions", endpoint=list_positions, methods=["GET"]),
             Route("/ohlc", endpoint=list_ohlc, methods=["GET"]),
