@@ -21,6 +21,7 @@ const Bookview = () => {
     setSelectedPair,
     priceToTradesTransposed,
     orderAmount,
+    roundPrice,
   } = useKrakenDataContext();
 
   useEffect(() => {
@@ -42,6 +43,7 @@ const Bookview = () => {
     bid_volume_total,
     ask_volume_total_percentage,
     bids_volume_total_percentage,
+    peg_price,
   } = book;
 
   const bidColor = "blue";
@@ -128,9 +130,20 @@ const Bookview = () => {
   const renderSellPosition = (price: number) => {
     const pos = priceToTradesTransposed[price];
     if (pos) {
+      const currentCost = peg_price * pos.vol;
+      const pl = currentCost - pos.cost;
+
       return pos.type === "sell" ? (
-        <div className="flex pl-2 text-red-400 border-2 border-solid border-red-200 text-xs">
-          <div>SL|{Math.round(pos.vol)}</div>
+        <div
+          className={
+            pl > 0
+              ? "flex space-x-1 border-solid border-2 border-green-400 bg-green-200 text-xs"
+              : "flex space-x-1 border-solid border-2 border-red-400 bg-red-200 text-xs"
+          }
+        >
+          <div>
+            SL|{Math.round(pos.vol)}|{roundPrice(pl)}
+          </div>
         </div>
       ) : null;
     }
@@ -148,16 +161,28 @@ const Bookview = () => {
 
   const renderBuyPosition = (price: number) => {
     const pos = priceToTradesTransposed[price];
+
     if (pos) {
-      return pos.type === "buy" ? (
-        <div className="flex pr-2 bg-blue-200"> BL|{Math.round(pos.vol)}</div>
-      ) : null;
+      const currentCost = peg_price * pos.vol;
+      const pl = currentCost - pos.cost;
+
+      return (
+        <div
+          className={
+            pl > 0
+              ? "flex space-x-1 border-solid border-2 border-green-400 bg-green-200 text-xs"
+              : "flex space-x-1 border-solid border-2 border-red-400 bg-red-200 text-xs"
+          }
+        >
+          BL|{Math.round(pos.vol)}|{roundPrice(pl)}
+        </div>
+      );
     }
     const tempOrder = temporaryOrders[price];
     if (tempOrder && tempOrder.side === "buy") {
       return (
-        <div className="flex pl-2 text-red-400 border-2 border-solid border-teal-200 text-xs">
-          <div>O|SL|{Math.round(tempOrder.vol)}</div>
+        <div className="flex text-red-400 border-2 border-solid border-teal-200 text-xs">
+          <div>O|BL|{Math.round(tempOrder.vol)}</div>
         </div>
       );
     }
@@ -195,7 +220,9 @@ const Bookview = () => {
             {data.map((x: BookPriceType, i) => (
               <div key={i} className="divide-y">
                 <div className="border-1 flex space-x-2 divide-x">
-                  <div className="flex-1">{renderBuyPosition(x.price)}</div>
+                  <div className="flex-1 w-64">
+                    {renderBuyPosition(x.price)}
+                  </div>
                   <div
                     className={
                       i < depth
@@ -222,7 +249,10 @@ const Bookview = () => {
                   <div className="flex-1">{renderSellPosition(x.price)}</div>
                 </div>
                 {i === depth - 1 ? (
-                  <div className="border-1 flex space-x-2">
+                  <div
+                    className="border-1 flex space-x-2"
+                    style={{ backgroundColor: "lavender" }}
+                  >
                     <div className="flex-1"></div>
                     <div
                       className="p-2 flex-1 pr-2 text-right text-blue-800 cursor-pointer hover:bg-blue-600"

@@ -24,7 +24,8 @@ import {
   Side,
   Leverage,
 } from "./commons";
-import { debounce } from "lodash";
+import { debounce, throttle } from "lodash";
+import { useThrottle } from "@uidotdev/usehooks";
 
 type KrakenDataContextType = {
   book: BookDataType | undefined;
@@ -111,6 +112,7 @@ type Props = {
 
 export const KrakenDataProvider = ({ children }: Props) => {
   const [messages, setMessageHistory] = useState([]);
+  const throttledMessagesValue = useThrottle(messages, 1000);
   const [priceToTradesTransposed, setPriceToTradesTransposed] = useState({});
   const [orderBookSocketUrl] = useState("ws://localhost:8000/ws_orderbook");
   const { lastMessage: orderBookLastMessage, readyState: orderBookReadyState } =
@@ -134,6 +136,7 @@ export const KrakenDataProvider = ({ children }: Props) => {
   const [selectedBook, setSelectedBook] = useState<BookDataType | undefined>(
     undefined
   );
+  const throttledSelectedBookValue = useThrottle(selectedBook, 500);
   const [totalTradesCount, setTotalTradesCount] = useState({
     total: 0,
     sells: 0,
@@ -238,30 +241,35 @@ export const KrakenDataProvider = ({ children }: Props) => {
       });
   }, [roundPrice]);
 
-  const refetchOrdersAndTrades = () => {
+  const __refetchOrdersAndTrades = () => {
     console.log("fetching Orders and trades");
     fetchTrades();
     fetchOrders();
   };
 
-  const debouncedChangeHandler = useCallback(
-    debounce(refetchOrdersAndTrades, 300),
+  const debouncedRefetchOrdersAndTrades = useCallback(
+    debounce(__refetchOrdersAndTrades, 500),
     []
   );
 
   useEffect(() => {
-    debouncedChangeHandler();
+    debouncedRefetchOrdersAndTrades();
   }, []);
 
-  useEffect(() => {
-    if (orderManagementLastMessage !== null) {
-      addLogMessage(orderManagementLastMessage.data);
-      const obj = JSON.parse(orderManagementLastMessage.data);
-      if (obj && (obj["txid"] || obj["count"])) {
-        refetchOrdersAndTrades();
-      }
-    }
-  }, [orderManagementLastMessage, refetchOrdersAndTrades]);
+  const debounceSetBook = throttle((newBook) => {
+    // console.log("setbook");
+    setSelectedBook(newBook);
+  }, 500);
+
+  // useEffect(() => {
+  //   if (orderManagementLastMessage !== null) {
+  //     addLogMessage(orderManagementLastMessage.data);
+  //     const obj = JSON.parse(orderManagementLastMessage.data);
+  //     if (obj && (obj["txid"] || obj["count"])) {
+  //       debouncedRefetchOrdersAndTrades();
+  //     }
+  //   }
+  // }, [orderManagementLastMessage]);
 
   useEffect(() => {
     const __book = orderBookLastMessage?.data
@@ -273,7 +281,7 @@ export const KrakenDataProvider = ({ children }: Props) => {
       __book.pair === selectedPair &&
       __book.checksum !== selectedBook?.checksum
     ) {
-      setSelectedBook((p) => __book);
+      debounceSetBook(__book);
     }
   }, [orderBookLastMessage, selectedBook?.checksum, selectedPair]);
 
@@ -398,10 +406,10 @@ export const KrakenDataProvider = ({ children }: Props) => {
     orderAmount,
     scaleInOut,
     addOrder,
-    logMessages: messages,
+    logMessages: throttledMessagesValue,
     setOrderAmount,
     setScaleInOut,
-    book: selectedBook,
+    book: throttledSelectedBookValue,
     fetchOrders,
     fetchTrades,
     status: st,

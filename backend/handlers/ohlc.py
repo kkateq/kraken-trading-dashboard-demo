@@ -11,7 +11,7 @@ import logging.config
 import asyncio
 import json
 
-orders_websocket = None
+ohlc_websocket = None
 
 from kraken.exceptions import KrakenAuthenticationError  # , KrakenPermissionDeniedError
 from kraken.spot import Funding, KrakenSpotWSClientV1, Market, Staking, Trade, User
@@ -34,10 +34,9 @@ class TradingBot(KrakenSpotWSClientV1):
                 pass
 
         if isinstance(message, list):
-            orders = message[0]
-            channel = message[1]
-            if channel == "openOrders":
-                await orders_websocket.send_json(json.dumps(orders))
+            channelName = message[2]
+            if channelName.startswith("ohlc"):
+                await ohlc_websocket.send_json(json.dumps(message[1]))
 
     def save_exit(self: TradingBot, reason: Optional[str] = "") -> None:
         """controlled shutdown of the strategy"""
@@ -63,9 +62,10 @@ class Manager:
         try:
             self.bot = TradingBot(config=self.__config)
             interval = self.__config["interval"]
+            pairs = self.__config["pairs"]
+            # channel = "ohlc-{}".format(interval)
             await self.bot.subscribe(
-                subscription={"name": "ohlc-{}".format(interval)},
-                pair=self.__config.pairs,
+                subscription={"name": "ohlc", "interval": int(interval)}, pair=pairs
             )
         except KeyboardInterrupt:
             self.save_exit(reason="KeyboardInterrupt")
@@ -96,8 +96,8 @@ class Manager:
 
 
 async def start_ohlc(pair, ws, config, interval) -> None:
-    global orders_websocket
-    orders_websocket = ws
+    global ohlc_websocket
+    ohlc_websocket = ws
     manager: Manager = Manager(
         config={
             "key": config("SPOT_API_KEY", cast=str),

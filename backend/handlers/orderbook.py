@@ -65,7 +65,7 @@ class Orderbook(OrderbookClientV2):
             await order_book_websocket.send_json(json.dumps(book_ts))
 
 
-async def start_book(pairs, ws, depth=25) -> None:
+async def start_book(pairs, ws, depth=100) -> None:
     global order_book_websocket
     order_book_websocket = ws
     orderbook = Orderbook(depth=depth)

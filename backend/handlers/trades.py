@@ -56,10 +56,10 @@ class TradingBot(KrakenSpotWSClientV1):
         # logging.info(message)
 
         if isinstance(message, list):
-            orders = message[0]
+            trades = message[0]
             channel = message[1]
             if channel == "ownTrades":
-                await trades_websocket.send_json(json.dumps(orders))
+                await trades_websocket.send_json(json.dumps(trades))
 
     def save_exit(self: TradingBot, reason: Optional[str] = "") -> None:
         """controlled shutdown of the strategy"""

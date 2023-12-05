@@ -6,6 +6,7 @@ import { useState } from "react";
 import { WATCH_PAIRS, INTERVALS, LogLevel } from "./commons";
 import useWebSocket, { ReadyState } from "react-use-websocket";
 import WsStatusIcon from "./wsstatusicon";
+import { debounce } from "lodash";
 
 export default function Chart() {
   const [ohlcSocketUrl] = useState("ws://localhost:8000/ws_ohlc");
@@ -31,6 +32,7 @@ export default function Chart() {
 
   const fetchOHLC = useCallback(
     (pair: string, interval: number) => {
+      console.log("fetched OHLC");
       fetch(
         `http://localhost:8000/ohlc?pair=${encodeURIComponent(
           pair
@@ -47,13 +49,11 @@ export default function Chart() {
     [addLogMessage]
   );
 
-  useEffect(() => {
-    if (ohlcLastMessage?.data) {
-      console.log("fetched OHLC");
+  const debouncedFetchHandler = useCallback(debounce(fetchOHLC, 300), []);
 
-      fetchOHLC(pair, interval);
-    }
-  }, [ohlcLastMessage]);
+  useEffect(() => {
+    debouncedFetchHandler(pair, interval);
+  }, [pair, interval]);
 
   //   useEffect(() => {
   //     if (ohlcLastMessage?.data) {
@@ -65,27 +65,33 @@ export default function Chart() {
   const selectedPairData = data ? data[pair] : undefined;
 
   return (
-    <div>
-      <WsStatusIcon readyState={readyState} />
-      <div className="flex border-solid border-2 rounded border-gray-400">
-        <select id="pair" onChange={handlePairChange} value={pair}>
-          {WATCH_PAIRS.map((v, i) => (
-            <option value={v} key={i}>
-              {v}
-            </option>
-          ))}
-        </select>
+    <div className="border-solid border-2 border-gray-300 m-2">
+      <div className="flex p-2 space-x-1">
+        <WsStatusIcon readyState={readyState} />
+        <div className="flex border-solid border-2 rounded border-gray-400">
+          <select id="pair" onChange={handlePairChange} value={pair}>
+            {WATCH_PAIRS.map((v, i) => (
+              <option value={v} key={i}>
+                {v}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="flex border-solid border-2 rounded border-gray-400">
+          <select
+            id="interval"
+            onChange={handleIntervalChange}
+            value={interval}
+          >
+            {INTERVALS.map((v, i) => (
+              <option value={v} key={i}>
+                {v} min
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
-      <div className="flex border-solid border-2 rounded border-gray-400">
-        <select id="interval" onChange={handleIntervalChange} value={interval}>
-          {INTERVALS.map((v, i) => (
-            <option value={v} key={i}>
-              {v} min
-            </option>
-          ))}
-        </select>
-      </div>
-      {!selectedPairData ? <div>No data</div> : Chart}
+      {!selectedPairData ? <div>No data</div> : <div>Data</div>}
     </div>
   );
 }
