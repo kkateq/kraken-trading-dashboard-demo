@@ -7,6 +7,7 @@ import Trades from "./trades";
 import MessageLog from "./messagelog";
 import { OrderForm } from "./orderform";
 import { useKrakenDataContext } from "./kraken_data_provider";
+import Chart from "./chart";
 
 export default function Orderbook() {
   const {
@@ -33,8 +34,11 @@ export default function Orderbook() {
           <MessageLog />
         </div>
       </div>
-      <div className="w-full">
+      <div>
         <Book />
+      </div>
+      <div className="w-full h-screen">
+        <Chart />
       </div>
     </div>
   );

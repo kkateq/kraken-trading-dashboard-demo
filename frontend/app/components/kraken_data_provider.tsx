@@ -24,6 +24,7 @@ import {
   Side,
   Leverage,
 } from "./commons";
+import { debounce } from "lodash";
 
 type KrakenDataContextType = {
   book: BookDataType | undefined;
@@ -57,6 +58,7 @@ type KrakenDataContextType = {
   roundPrice: (price: number) => number;
   closeAllTrades: () => void;
   flattenAllTrades: () => void;
+  addLogMessage: (message: string, level: LogLevel) => void;
   priceToTradesTransposed: {
     [price: number]: {
       side: SideType;
@@ -98,6 +100,7 @@ const KrakenContext = createContext<KrakenDataContextType>({
   flattenTrade: noop,
   closeTrade: noop,
   flattenAllTrades: noop,
+  addLogMessage: noop,
 });
 
 export const useKrakenDataContext = () => useContext(KrakenContext);
@@ -113,12 +116,15 @@ export const KrakenDataProvider = ({ children }: Props) => {
   const { lastMessage: orderBookLastMessage, readyState: orderBookReadyState } =
     useWebSocket(orderBookSocketUrl);
 
+  // This is not being used for anything except listening for orders/trades creation updates messages.
   const [orderManagementSocketUrl] = useState("ws://localhost:8000/ws_create");
   const {
     sendMessage: sendOrderManagementMessage,
     lastMessage: orderManagementLastMessage,
     readyState: orderManagementReadyState,
   } = useWebSocket(orderManagementSocketUrl);
+
+  // This is not being used for anything except listening for orders/trades creation updates messages.
 
   const [orderAmount, setOrderAmount] = useState<number>(10);
   const [scaleInOut, setScaleInOut] = useState<boolean>(true);
@@ -232,14 +238,19 @@ export const KrakenDataProvider = ({ children }: Props) => {
       });
   }, [roundPrice]);
 
-  const refetchOrdersAndTrades = useCallback(() => {
-    console.log("fetching data");
+  const refetchOrdersAndTrades = () => {
+    console.log("fetching Orders and trades");
     fetchTrades();
     fetchOrders();
-  }, [fetchOrders, fetchTrades]);
+  };
+
+  const debouncedChangeHandler = useCallback(
+    debounce(refetchOrdersAndTrades, 300),
+    []
+  );
 
   useEffect(() => {
-    refetchOrdersAndTrades();
+    debouncedChangeHandler();
   }, []);
 
   useEffect(() => {
@@ -407,6 +418,7 @@ export const KrakenDataProvider = ({ children }: Props) => {
     flattenTrade,
     closeAllTrades,
     flattenAllTrades,
+    addLogMessage,
   };
 
   return (

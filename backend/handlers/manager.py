@@ -39,6 +39,10 @@ class TradingBot(KrakenSpotWSClientV1):
         open_positions = self.__user.get_open_positions()
         return open_positions
 
+    def get_ohlc(self, pair, interval):
+        ohlc_data = self.__market.get_ohlc(pair, interval)
+        return ohlc_data
+
     def get_open_orders(self):
         open_orders = self.__user.get_open_orders()
         if "open" in open_orders:

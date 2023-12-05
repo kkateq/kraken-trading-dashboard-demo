@@ -82,3 +82,5 @@ export type OrderResponseType = {
 };
 
 export const WATCH_PAIRS = ["MATIC/USD", "BTC/USD"];
+
+export const INTERVALS = [1, 5, 15, 30, 60];

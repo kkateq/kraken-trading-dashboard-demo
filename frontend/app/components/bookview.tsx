@@ -1,5 +1,5 @@
 "use client";
-
+import { useState, useEffect } from "react";
 import {
   Order,
   OrderType,
@@ -11,13 +11,25 @@ import {
 import { useKrakenDataContext } from "./kraken_data_provider";
 
 const Bookview = () => {
+  const [temporaryOrders, setTemporaryOrders] = useState({});
+
   const {
     book,
+    orders,
     addOrder,
     selectedPair,
     setSelectedPair,
     priceToTradesTransposed,
+    orderAmount,
   } = useKrakenDataContext();
+
+  useEffect(() => {
+    if (orders.length === 0 && Object.keys(temporaryOrders).length > 0) {
+      setTemporaryOrders({});
+    } else {
+      // const orderDescr;
+    }
+  }, [orders]);
 
   if (!book) {
     return null;
@@ -61,13 +73,20 @@ const Bookview = () => {
   const handleBidClick = (index: number, price: number) => {
     const check = priceToTradesTransposed[price];
     if (check) {
-      console.log("trade exists");
+      console.log("trade for this price level already exists");
       return;
     }
     const orderType = getOrderType(Side.buy, index, depth);
     if (orderType) {
       console.log("OrderType: " + Side.buy + " - " + orderType);
-
+      setTemporaryOrders((prev) => ({
+        ...prev,
+        [price]: {
+          side: Side.buy,
+          type: orderType,
+          vol: orderAmount,
+        },
+      }));
       addOrder(orderType as OrderType, Side.buy, price);
     }
   };
@@ -75,13 +94,20 @@ const Bookview = () => {
   const handleAskClick = (index: number, price: number) => {
     const check = priceToTradesTransposed[price];
     if (check) {
-      console.log("trade exists");
+      console.log("trade for this price level already exists");
       return;
     }
     const orderType = getOrderType(Side.sell, index, depth);
     if (orderType) {
       console.log("OrderType: " + Side.sell + " - " + orderType);
-
+      setTemporaryOrders((prev) => ({
+        ...prev,
+        [price]: {
+          side: Side.sell,
+          type: orderType,
+          vol: orderAmount,
+        },
+      }));
       addOrder(orderType as OrderType, Side.sell, price);
     }
   };
@@ -108,6 +134,15 @@ const Bookview = () => {
         </div>
       ) : null;
     }
+    const tempOrder = temporaryOrders[price];
+    if (tempOrder && tempOrder.side === "sell") {
+      return (
+        <div className="flex pl-2 text-red-400 border-2 border-solid border-orange-200 text-xs">
+          <div>O|SL|{Math.round(tempOrder.vol)}</div>
+        </div>
+      );
+    }
+
     return <span></span>;
   };
 
@@ -117,6 +152,14 @@ const Bookview = () => {
       return pos.type === "buy" ? (
         <div className="flex pr-2 bg-blue-200"> BL|{Math.round(pos.vol)}</div>
       ) : null;
+    }
+    const tempOrder = temporaryOrders[price];
+    if (tempOrder && tempOrder.side === "buy") {
+      return (
+        <div className="flex pl-2 text-red-400 border-2 border-solid border-teal-200 text-xs">
+          <div>O|SL|{Math.round(tempOrder.vol)}</div>
+        </div>
+      );
     }
     return <span></span>;
   };

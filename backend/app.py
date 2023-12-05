@@ -11,6 +11,7 @@ from starlette.templating import Jinja2Templates
 from handlers.orderbook import start_book
 from handlers.orders import start_orders
 from handlers.trades import start_trades
+from handlers.ohlc import start_ohlc
 from handlers.manager import get_kraken_manager
 import uvicorn
 from starlette.config import Config
@@ -53,6 +54,16 @@ class OrdersWebsocketEndpoint(WebSocketEndpoint):
     async def on_connect(self, websocket: WebSocket) -> None:
         await websocket.accept()
         await start_orders(pairs, websocket, config)
+
+
+class OHLCWebsocketEndpoint(WebSocketEndpoint):
+    encoding = "json"
+
+    async def on_connect(self, websocket: WebSocket) -> None:
+        pair = websocket.query_params["pair"]
+        interval = websocket.query_params["interval"]
+        await websocket.accept()
+        await start_ohlc(pair, websocket, config, interval)
 
 
 class TradesWebsocketEndpoint(WebSocketEndpoint):
@@ -145,7 +156,7 @@ async def list_orders(request):
         orders = kraken_manager.bot.get_open_orders()
         return JSONResponse(orders)
     else:
-        print("kraken_manager is not available")
+        logger.error("kraken_manager is not available")
         return JSONResponse([])
 
 
@@ -155,7 +166,22 @@ async def list_positions(request):
         positions = kraken_manager.bot.get_open_positions()
         return JSONResponse(positions)
     else:
-        print("kraken_manager is not available")
+        logger.error("kraken_manager is not available")
+        return JSONResponse([])
+
+
+async def list_ohlc(request):
+    global kraken_manager
+    if kraken_manager and kraken_manager.bot:
+        pair = request.query_params["pair"]
+        interval = request.query_params["interval"]
+        if pair and interval:
+            ohlc_data = kraken_manager.bot.get_ohlc(pair, interval)
+            return JSONResponse(ohlc_data)
+        else:
+            logger.error("Pair and interval parameters should be provided.")
+    else:
+        logger.error("kraken_manager is not available")
         return JSONResponse([])
 
 
@@ -167,8 +193,10 @@ if __name__ == "__main__":
             WebSocketRoute("/ws_orders", OrdersWebsocketEndpoint),
             WebSocketRoute("/ws_trades", TradesWebsocketEndpoint),
             WebSocketRoute("/ws_create", OperateWebsocketEndpoint),
+            WebSocketRoute("/ws_ohlc", OHLCWebsocketEndpoint),
             Route("/orders", endpoint=list_orders, methods=["GET"]),
             Route("/positions", endpoint=list_positions, methods=["GET"]),
+            Route("/ohlc", endpoint=list_ohlc, methods=["GET"]),
             Route("/schema", endpoint=openapi_schema, include_in_schema=False),
         ),
         middleware=[Middleware(CORSMiddleware, allow_origins=["*"])],
