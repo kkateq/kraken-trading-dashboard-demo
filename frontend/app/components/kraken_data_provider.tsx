@@ -126,7 +126,19 @@ export const KrakenDataProvider = ({ children }: Props) => {
     readyState: orderManagementReadyState,
   } = useWebSocket(orderManagementSocketUrl);
 
-  // This is not being used for anything except listening for orders/trades creation updates messages.
+  const [ordersSocketUrl] = useState("ws://localhost:8000/ws_orders");
+  const {
+    sendMessage: ordersMessage,
+    lastMessage: ordersLastMessage,
+    readyState: ordersReadyState,
+  } = useWebSocket(ordersSocketUrl);
+
+  const [tradesSocketUrl] = useState("ws://localhost:8000/ws_trades");
+  const {
+    sendMessage: tradesMessage,
+    lastMessage: tradesLastMessage,
+    readyState: tradesReadyState,
+  } = useWebSocket(tradesSocketUrl);
 
   const [orderAmount, setOrderAmount] = useState<number>(10);
   const [scaleInOut, setScaleInOut] = useState<boolean>(true);
@@ -261,15 +273,27 @@ export const KrakenDataProvider = ({ children }: Props) => {
     setSelectedBook(newBook);
   }, 500);
 
-  // useEffect(() => {
-  //   if (orderManagementLastMessage !== null) {
-  //     addLogMessage(orderManagementLastMessage.data);
-  //     const obj = JSON.parse(orderManagementLastMessage.data);
-  //     if (obj && (obj["txid"] || obj["count"])) {
-  //       debouncedRefetchOrdersAndTrades();
-  //     }
-  //   }
-  // }, [orderManagementLastMessage]);
+  useEffect(() => {
+    if (orderManagementLastMessage !== null) {
+      addLogMessage(orderManagementLastMessage.data);
+      const obj = JSON.parse(orderManagementLastMessage.data);
+      if (obj && (obj["txid"] || obj["count"])) {
+        debouncedRefetchOrdersAndTrades();
+      }
+    }
+  }, [orderManagementLastMessage]);
+
+  useEffect(() => {
+    if (ordersLastMessage !== null || tradesLastMessage !== null) {
+      addLogMessage(
+        ordersLastMessage !== null
+          ? ordersLastMessage.data
+          : tradesLastMessage?.data
+      );
+
+      debouncedRefetchOrdersAndTrades();
+    }
+  }, [ordersLastMessage, tradesLastMessage]);
 
   useEffect(() => {
     const __book = orderBookLastMessage?.data
