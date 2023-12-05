@@ -16,7 +16,10 @@ export default function Orderbook() {
 
   return (
     <div className="flex ml-1">
-      <div className="flex flex-col gap-2" style={{ width: "500px" }}>
+      <div
+        className="flex flex-col gap-2"
+        style={{ width: "500px", minWidth: "500px" }}
+      >
         <div className="pt-2 flex">
           <WsStatusIcon readyState={allSystems} />
           Balance
