@@ -1,14 +1,15 @@
 "use client";
 
-import { useEffect, useCallback, useState } from "react";
+import { useEffect, useCallback, useState, useRef } from "react";
 import { useKrakenDataContext } from "./kraken_data_provider";
-import Spread from "./spread";
 import { WATCH_PAIRS, INTERVALS, LogLevel } from "./commons";
 import useWebSocket from "react-use-websocket";
 import WsStatusIcon from "./wsstatusicon";
 import { debounce } from "lodash";
+import Chart from "react-apexcharts";
 
-export default function Chart() {
+export default function Chartview() {
+  const parent = useRef(0);
   const [ohlcSocketUrl] = useState("ws://localhost:8000/ws_ohlc");
   const [pair, setPair] = useState(WATCH_PAIRS[0]);
   const [interval, setInterval] = useState(5);
@@ -62,10 +63,21 @@ export default function Chart() {
   //     }
   //   }, [ohlcLastMessage?.data]);
 
-  const selectedPairData = data ? data[pair] : undefined;
+  const ds = {
+    options: {
+      xaxis: {
+        type: "datetime",
+      },
+    },
+    series: [
+      {
+        data: data || [],
+      },
+    ],
+  };
 
   return (
-    <div className="border-solid border-2 border-gray-300 m-2">
+    <div ref={parent} className="border-solid border-2 border-gray-300 m-2">
       <div className="flex p-2 space-x-1">
         <WsStatusIcon readyState={readyState} />
         <div className="flex border-solid border-2 rounded border-gray-400">
@@ -91,7 +103,15 @@ export default function Chart() {
           </select>
         </div>
       </div>
-      {!selectedPairData ? <div>No data</div> : <div>Data</div>}
+      {!data && <div>No data</div>}
+      {data && (
+        <Chart
+          options={ds.options}
+          series={ds.series}
+          type="candlestick"
+          width={parent.current ? parent.current.clientWidth : 1000}
+        />
+      )}
     </div>
   );
 }

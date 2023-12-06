@@ -3,7 +3,7 @@ import contextlib
 import json
 from starlette.applications import Starlette
 from starlette.endpoints import WebSocketEndpoint
-
+from datetime import datetime
 from starlette.routing import Route, WebSocketRoute
 from starlette.middleware import Middleware
 from starlette.websockets import WebSocket
@@ -179,6 +179,49 @@ async def list_positions(request):
         return JSONResponse([])
 
 
+def transform_ohlc(data, pair):
+    _opens = []
+    _highs = []
+    _times = []
+    _lows = []
+    _closes = []
+    _vwaps = []
+    _volumes = []
+    _counts = []
+    pair_ohlc = data[pair]
+    for [time, openp, high, low, close, vwap, volume, count] in pair_ohlc:
+        date = datetime.fromtimestamp(time)
+        _times.append(str(date))
+        _opens.append(openp)
+        _highs.append(high)
+        _lows.append(low)
+        _closes.append(close)
+        _vwaps.append(vwap)
+        _volumes.append(volume)
+        _counts.append(count)
+
+    return {
+        "time": _times,
+        "high": _highs,
+        "close": _closes,
+        "open": _opens,
+        "lows": _lows,
+        "counts": _counts,
+        "vwap": _vwaps,
+        "volume": _volumes,
+    }
+
+
+def transform_ohlc2(data, pair):
+    res = []
+
+    pair_ohlc = data[pair]
+    for [time, openp, high, low, close, vwap, volume, count] in pair_ohlc:
+        res.append({"x": time, "y": [openp, high, low, close]})
+
+    return res
+
+
 async def list_ohlc(request):
     global kraken_manager
     if kraken_manager and kraken_manager.bot:
@@ -186,7 +229,9 @@ async def list_ohlc(request):
         interval = request.query_params["interval"]
         if pair and interval:
             ohlc_data = kraken_manager.bot.get_ohlc(pair, interval)
-            return JSONResponse(ohlc_data)
+            ohlc_data_tr = transform_ohlc2(ohlc_data, pair)
+
+            return JSONResponse(ohlc_data_tr)
         else:
             logger.error("Pair and interval parameters should be provided.")
     else:

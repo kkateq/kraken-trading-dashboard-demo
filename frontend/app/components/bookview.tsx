@@ -41,10 +41,6 @@ const Bookview = () => {
     }
   }, [orders]);
 
-  if (!book) {
-    return null;
-  }
-
   const {
     data,
     depth,
@@ -53,7 +49,7 @@ const Bookview = () => {
     ask_volume_total_percentage,
     bids_volume_total_percentage,
     peg_price,
-  } = book;
+  } = book || {};
 
   const bidColor = "blue";
   const askColor = "pink";
@@ -185,107 +181,112 @@ const Bookview = () => {
   return (
     <div className="flex rounded text-sm" style={{ height: "95vh" }}>
       <div className="ml-2" style={{ width: "500px" }}>
-        <div className="space-x-1 mt-1 flex">
-          <div className="bold mr-4">
-            <div className="flex border-solid border-2 rounded border-gray-400">
-              <select
-                id="selectPair"
-                onChange={handlePairChange}
-                value={selectedPair}
-              >
-                {WATCH_PAIRS.map((v, i) => (
-                  <option value={v} key={i}>
-                    {v}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-          <span className={`w-full text-${bidColor}-800`}>
-            {bid_volume_total}({bids_volume_total_percentage}%)
-          </span>
-          <span className={`w-full  text-${askColor}-800`}>
-            {ask_volume_total}({ask_volume_total_percentage})%
-          </span>
-        </div>
-        <div className="bg-white overflow-hidden flex flex-col h-full border-solid border-2 rounded border-gray-400 p-1">
-          <div className="overflow-auto divide-y">
-            {data.map((x: BookPriceType, i) => (
-              <div key={i} className="divide-y">
-                <div className="border-1 flex space-x-2 divide-x">
-                  <div className="flex-1 w-64">
-                    {renderPosition(x.price, Side.buy)}
-                  </div>
-                  <div
-                    className={
-                      i < depth
-                        ? "flex-1 pr-2 text-right text-blue-800"
-                        : "flex-1 pr-2 text-right text-blue-800 cursor-pointer hover:bg-blue-100"
-                    }
-                    onClick={() => handleBidClick(i, x.price)}
+        {book && (
+          <>
+            <div className="space-x-1 mt-1 flex">
+              <div className="bold mr-4">
+                <div className="flex border-solid border-2 rounded border-gray-400">
+                  <select
+                    id="selectPair"
+                    onChange={handlePairChange}
+                    value={selectedPair}
                   >
-                    {x.bid !== 0 ? x.bid : ""}
-                  </div>
-                  <div
-                    className={
-                      x.bid_ps > 0
-                        ? "flex-1 w-32 text-center text-xs text-green-600"
-                        : "flex-1 w-32 text-center text-xs text-red-600"
-                    }
-                  >
-                    {x.bid_ps !== 0 ? x.bid_ps : ""}
-                  </div>
-                  <div className="flex-1 text-center text-gray-500">
-                    {x.price !== 0 ? x.price : ""}
-                  </div>
-                  <div
-                    className={
-                      x.ask_ps > 0
-                        ? "flex-1 w-32 text-center text-xs text-green-600"
-                        : "flex-1 w-32 text-center text-xs text-red-600"
-                    }
-                  >
-                    {x.ask_ps !== 0 ? x.ask_ps : ""}
-                  </div>
-                  <div
-                    className={
-                      i < depth
-                        ? "flex-1 pl-2 text-left text-pink-800 cursor-pointer hover:bg-pink-100"
-                        : "flex-1 pl-2 text-left text-pink-800"
-                    }
-                    onClick={() => handleAskClick(i, x.price)}
-                  >
-                    {x.ask !== 0 ? x.ask : ""}
-                  </div>
-                  <div className="flex-1">
-                    {renderPosition(x.price, Side.sell)}
-                  </div>
+                    {WATCH_PAIRS.map((v, i) => (
+                      <option value={v} key={i}>
+                        {v}
+                      </option>
+                    ))}
+                  </select>
                 </div>
-                {i === depth - 1 ? (
-                  <div
-                    className="border-1 flex space-x-2"
-                    style={{ backgroundColor: "lavender" }}
-                  >
-                    <div className="flex-1"></div>
-                    <div
-                      className="p-2 flex-1 pr-2 text-right text-blue-800 cursor-pointer hover:bg-blue-600"
-                      onClick={() => handleBuyMarketClick(x.price)}
-                    ></div>
-                    <div className="flex-1 text-center text-gray-500"></div>
-                    <div
-                      className="p-2 flex-1 pl-2 text-left text-pink-800 cursor-pointer hover:bg-pink-600"
-                      onClick={() => handleSellMarketClick(x.price)}
-                    ></div>
-                    <div className="flex-1"></div>
-                  </div>
-                ) : null}
               </div>
-            ))}
-          </div>
-        </div>
-        <div className="mt-2 text-xs">
-          <h2 className="text-gray-600 mb-1">Order book depth {depth}</h2>
-        </div>
+              <span className={`w-full text-${bidColor}-800`}>
+                {bid_volume_total}({bids_volume_total_percentage}%)
+              </span>
+              <span className={`w-full  text-${askColor}-800`}>
+                {ask_volume_total}({ask_volume_total_percentage})%
+              </span>
+            </div>
+            <div className="bg-white overflow-hidden flex flex-col h-full border-solid border-2 rounded border-gray-400 p-1">
+              <div className="overflow-auto divide-y">
+                {data.map((x: BookPriceType, i) => (
+                  <div key={i} className="divide-y">
+                    <div className="border-1 flex space-x-2 divide-x">
+                      <div className="flex-1 w-64">
+                        {renderPosition(x.price, Side.buy)}
+                      </div>
+                      <div
+                        className={
+                          i < depth
+                            ? "flex-1 pr-2 text-right text-blue-800"
+                            : "flex-1 pr-2 text-right text-blue-800 cursor-pointer hover:bg-blue-100"
+                        }
+                        onClick={() => handleBidClick(i, x.price)}
+                      >
+                        {x.bid !== 0 ? x.bid : ""}
+                      </div>
+                      <div
+                        className={
+                          x.bid_ps > 0
+                            ? "flex-1 w-32 text-center text-xs text-green-600"
+                            : "flex-1 w-32 text-center text-xs text-red-600"
+                        }
+                      >
+                        {x.bid_ps !== 0 ? x.bid_ps : ""}
+                      </div>
+                      <div className="flex-1 text-center text-gray-500">
+                        {x.price !== 0 ? x.price : ""}
+                      </div>
+                      <div
+                        className={
+                          x.ask_ps > 0
+                            ? "flex-1 w-32 text-center text-xs text-green-600"
+                            : "flex-1 w-32 text-center text-xs text-red-600"
+                        }
+                      >
+                        {x.ask_ps !== 0 ? x.ask_ps : ""}
+                      </div>
+                      <div
+                        className={
+                          i < depth
+                            ? "flex-1 pl-2 text-left text-pink-800 cursor-pointer hover:bg-pink-100"
+                            : "flex-1 pl-2 text-left text-pink-800"
+                        }
+                        onClick={() => handleAskClick(i, x.price)}
+                      >
+                        {x.ask !== 0 ? x.ask : ""}
+                      </div>
+                      <div className="flex-1">
+                        {renderPosition(x.price, Side.sell)}
+                      </div>
+                    </div>
+                    {i === depth - 1 ? (
+                      <div
+                        className="border-1 flex space-x-2"
+                        style={{ backgroundColor: "lavender" }}
+                      >
+                        <div className="flex-1"></div>
+                        <div
+                          className="p-2 flex-1 pr-2 text-right text-blue-800 cursor-pointer hover:bg-blue-600"
+                          onClick={() => handleBuyMarketClick(x.price)}
+                        ></div>
+                        <div className="flex-1 text-center text-gray-500"></div>
+                        <div
+                          className="p-2 flex-1 pl-2 text-left text-pink-800 cursor-pointer hover:bg-pink-600"
+                          onClick={() => handleSellMarketClick(x.price)}
+                        ></div>
+                        <div className="flex-1"></div>
+                      </div>
+                    ) : null}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-2 text-xs">
+              <h2 className="text-gray-600 mb-1">Order book depth {depth}</h2>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
