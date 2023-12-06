@@ -224,10 +224,28 @@ const Bookview = () => {
                     }
                     onClick={() => handleBidClick(i, x.price)}
                   >
-                    {x.bid}
+                    {x.bid !== 0 ? x.bid : ""}
+                  </div>
+                  <div
+                    className={
+                      x.bid_ps > 0
+                        ? "flex-1 w-32 text-center text-xs text-green-600"
+                        : "flex-1 w-32 text-center text-xs text-red-600"
+                    }
+                  >
+                    {x.bid_ps !== 0 ? x.bid_ps : ""}
                   </div>
                   <div className="flex-1 text-center text-gray-500">
-                    {x.price}
+                    {x.price !== 0 ? x.price : ""}
+                  </div>
+                  <div
+                    className={
+                      x.ask_ps > 0
+                        ? "flex-1 w-32 text-center text-xs text-green-600"
+                        : "flex-1 w-32 text-center text-xs text-red-600"
+                    }
+                  >
+                    {x.ask_ps !== 0 ? x.ask_ps : ""}
                   </div>
                   <div
                     className={
@@ -237,7 +255,7 @@ const Bookview = () => {
                     }
                     onClick={() => handleAskClick(i, x.price)}
                   >
-                    {x.ask}
+                    {x.ask !== 0 ? x.ask : ""}
                   </div>
                   <div className="flex-1">
                     {renderPosition(x.price, Side.sell)}

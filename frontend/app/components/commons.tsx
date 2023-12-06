@@ -41,6 +41,8 @@ export type BookPriceType = {
   price: number;
   bid: number;
   ask: number;
+  ask_ps: number;
+  bid_ps: number;
 };
 
 export type BookDataType = {

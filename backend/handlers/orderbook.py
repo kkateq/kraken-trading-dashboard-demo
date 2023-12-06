@@ -1,8 +1,64 @@
 from kraken.spot import OrderbookClientV2
 import asyncio
 import json
+from collections import defaultdict
+
 
 order_book_websocket = None
+prev_book = None
+BID_TYPE = 1
+ASK_TYPE = -1
+PULLING_STACKING_CLEANUP_INTERVAL = 50
+
+
+def pulling_stacking(book):
+    global prev_book
+
+    try:
+        for b in book:
+            price = b["price"]
+            if b["ask"] != 0:
+                prev_ask = (
+                    prev_book[price]["ask"] if prev_book and price in prev_book else 0
+                )
+                ask_ps = b["ask"] - prev_ask
+
+                if (
+                    prev_book
+                    and ask_ps == 0
+                    and price in prev_book
+                    and "ask_ps" in prev_book[price]
+                    and "ask_ps_history" in prev_book[price]
+                    and prev_book[price]["ask_ps_history"]
+                    < PULLING_STACKING_CLEANUP_INTERVAL
+                ):
+                    b["ask_ps"] = prev_book[price]["ask_ps"]
+                    b["ask_ps_history"] = prev_book[price]["ask_ps_history"] + 1
+
+                else:
+                    b["ask_ps"] = ask_ps
+
+            if b["bid"] != 0:
+                prev_bid = (
+                    prev_book[price]["bid"] if prev_book and price in prev_book else 0
+                )
+                bid_ps = b["bid"] - prev_bid
+                if (
+                    prev_book
+                    and bid_ps == 0
+                    and price in prev_book
+                    and "bid_ps" in prev_book[price]
+                    and "bid_ps_history" in prev_book[price]
+                    and prev_book[price]["bid_ps_history"]
+                    < PULLING_STACKING_CLEANUP_INTERVAL
+                ):
+                    b["bid_ps"] = prev_book[price]["bid_ps"]
+                    b["bid_ps_history"] = prev_book[price]["bid_ps_history"] + 1
+                else:
+                    b["bid_ps"] = bid_ps
+
+    except Exception as e:
+        print("An exception occurred: ", e)
 
 
 def transform_book(book, depth, pair, checksum):
@@ -22,12 +78,23 @@ def transform_book(book, depth, pair, checksum):
     ask_volume_total = round(sum(j for _, j in asks))
 
     order_book_depth = depth
-    bids = [""] * order_book_depth + bid_volume
+    bids = [0] * order_book_depth + bid_volume
     price = ask_price + bid_price
-    asks = ask_volume + [""] * order_book_depth
+    asks = ask_volume + [0] * order_book_depth
     res = []
+
     for bid, price, ask in zip(bids, price, asks):
-        res.append({"bid": bid, "price": price, "ask": ask})
+        res.append(
+            {
+                "bid": bid,
+                "price": price,
+                "ask": ask,
+                "ask_ps": 0,
+                "bid_ps": 0,
+                "ask_ps_history": 0,
+                "bid_ps_history": 0,
+            }
+        )
 
     asks_total_percentage = round(
         (ask_volume_total / (ask_volume_total + bid_volume_total)) * 100
@@ -36,6 +103,15 @@ def transform_book(book, depth, pair, checksum):
     bids_total_percentage = round(
         (bid_volume_total / (ask_volume_total + bid_volume_total)) * 100
     )
+
+    pulling_stacking(res)
+
+    res_dict = {}
+    for entry in res:
+        res_dict[entry["price"]] = entry
+
+    global prev_book
+    prev_book = res_dict
 
     return {
         "data": res,
@@ -52,6 +128,7 @@ def transform_book(book, depth, pair, checksum):
         "checksum": checksum,
         "best_bid": best_bid,
         "best_ask": best_ask,
+        # "pulling_stacking": pulling_stacking_res,
     }
 
 
