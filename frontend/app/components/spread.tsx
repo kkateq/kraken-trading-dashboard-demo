@@ -6,6 +6,8 @@ type Props = {
   pair: string;
 };
 import { debounce } from "lodash";
+//@ts-ignore
+import Plot from "react-plotly.js";
 
 export default function Spread({ pair }: Props) {
   const [spreadSocketUrl] = useState("ws://localhost:8000/ws_spread");
@@ -27,6 +29,22 @@ export default function Spread({ pair }: Props) {
 
   const [bid, ask, time, bidVol, askVol] = data;
 
+  const renderGraph = () => (
+    <Plot
+      data={[
+        {
+          x: [1, 2, 3],
+          y: [2, 6, 3],
+          type: "scatter",
+          mode: "lines+markers",
+          marker: { color: "red" },
+        },
+        { type: "bar", x: [1, 2, 3], y: [2, 5, 3] },
+      ]}
+      layout={{ width: 320, height: 240, title: "A Fancy Plot" }}
+    />
+  );
+
   return (
     <div className="flex">
       <WsStatusIcon readyState={readyState} />
@@ -35,6 +53,7 @@ export default function Spread({ pair }: Props) {
         <div>Ask : {ask}</div>
         <div>Bid : {bidVol}</div>
         <div>Ask : {askVol}</div>
+        {renderGraph()}
       </div>
     </div>
   );

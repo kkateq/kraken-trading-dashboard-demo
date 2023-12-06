@@ -268,10 +268,10 @@ export const KrakenDataProvider = ({ children }: Props) => {
     debouncedRefetchOrdersAndTrades();
   }, []);
 
-  const debounceSetBook = throttle((newBook) => {
-    // console.log("setbook");
-    setSelectedBook(newBook);
-  }, 500);
+  // const debounceSetBook = throttle((newBook) => {
+  //   // console.log("setbook");
+  //   setSelectedBook(newBook);
+  // }, 100);
 
   useEffect(() => {
     if (orderManagementLastMessage !== null) {
@@ -305,7 +305,7 @@ export const KrakenDataProvider = ({ children }: Props) => {
       __book.pair === selectedPair &&
       __book.checksum !== selectedBook?.checksum
     ) {
-      debounceSetBook(__book);
+      setSelectedBook(__book);
     }
   }, [orderBookLastMessage, selectedBook?.checksum, selectedPair]);
 
@@ -433,7 +433,7 @@ export const KrakenDataProvider = ({ children }: Props) => {
     logMessages: throttledMessagesValue,
     setOrderAmount,
     setScaleInOut,
-    book: throttledSelectedBookValue,
+    book: selectedBook,
     fetchOrders,
     fetchTrades,
     status: st,

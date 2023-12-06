@@ -92,7 +92,6 @@ export default function Chart() {
         </div>
       </div>
       {!selectedPairData ? <div>No data</div> : <div>Data</div>}
-      <Spread pair={pair} />
     </div>
   );
 }
