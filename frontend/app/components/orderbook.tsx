@@ -16,7 +16,7 @@ export default function Orderbook() {
 
   return (
     <div className="flex">
-      <div style={{ width: "800px", minWidth: "800px" }}>
+      <div style={{ width: "600px", minWidth: "600px" }}>
         <Chart />
       </div>
       <div className="w-full">
@@ -24,7 +24,7 @@ export default function Orderbook() {
       </div>
       <div
         className="flex flex-col gap-2"
-        style={{ width: "500px", minWidth: "500px" }}
+        style={{ width: "400px", minWidth: "400px" }}
       >
         <div className="pt-2 flex">
           <WsStatusIcon readyState={allSystems} />

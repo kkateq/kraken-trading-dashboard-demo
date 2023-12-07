@@ -1,11 +1,13 @@
 from kraken.spot import OrderbookClientV2
 import asyncio
 import json
-from collections import defaultdict
-
+import time
 
 order_book_websocket = None
 prev_book = None
+imbalance_history = []
+large_volume_history = []
+
 BID_TYPE = 1
 ASK_TYPE = -1
 PULLING_STACKING_CLEANUP_INTERVAL = 50
@@ -61,6 +63,26 @@ def pulling_stacking(book):
         print("An exception occurred: ", e)
 
 
+def calculate_imbalance(bid_volume, ask_volume):
+    best_bid_volume = bid_volume[0]
+    best_ask_volume = ask_volume[0]
+
+    imbalance = (best_bid_volume - best_ask_volume) / (
+        best_bid_volume + best_ask_volume
+    )
+    t = time.time()
+    imbalance_history.append({"x": t, "y": imbalance})
+    large_volume_history.append(
+        {
+            "x": t,
+            "y": best_bid_volume
+            if imbalance > 0.5
+            else (best_ask_volume if imbalance < -0.5 else 0),
+        }
+    )
+    return imbalance
+
+
 def transform_book(book, depth, pair, checksum):
     bids = [(float(i[0]), float(i[1][0])) for i in list(book["bid"].items())]
     asks = [(float(j[0]), float(j[1][0])) for j in list(book["ask"].items())]
@@ -68,9 +90,11 @@ def transform_book(book, depth, pair, checksum):
     ask_volume = [round(j) for _, j in asks]
     bid_price = [i for i, _ in bids]
     ask_price = [i for i, _ in asks]
+    imbalance = calculate_imbalance(bid_volume, ask_volume)
     peg_price = (bid_price[0] + ask_price[0]) / 2
     best_bid = bid_price[0]
     best_ask = ask_price[0]
+
     ask_volume.reverse()
     ask_price.reverse()
 
@@ -128,7 +152,9 @@ def transform_book(book, depth, pair, checksum):
         "checksum": checksum,
         "best_bid": best_bid,
         "best_ask": best_ask,
-        # "pulling_stacking": pulling_stacking_res,
+        "imbalance": imbalance,
+        "imbalance_history": imbalance_history,
+        "large_volume_history": large_volume_history,
     }
 
 
