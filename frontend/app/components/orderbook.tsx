@@ -8,6 +8,7 @@ import MessageLog from "./messagelog";
 import { OrderForm } from "./orderform";
 import { useKrakenDataContext } from "./kraken_data_provider";
 import Chart from "./chart";
+import { useEffect } from "react";
 
 export default function Orderbook() {
   const {

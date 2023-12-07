@@ -11,7 +11,7 @@ import {
 } from "./commons";
 import useWebSocket from "react-use-websocket";
 import WsStatusIcon from "./wsstatusicon";
-import { debounce } from "lodash";
+
 import Chart from "react-apexcharts";
 import { Spinner } from "@material-tailwind/react";
 
@@ -19,18 +19,17 @@ export default function Chartview() {
   const parent = useRef(0);
   const [ohlcSocketUrl] = useState("ws://localhost:8000/ws_ohlc");
   const [pair, setPair] = useState(WATCH_PAIRS[0]);
-  const [interval, setInterval] = useState(5);
+  const [interval, setInterval] = useState(INTERVALS[1]);
   const [data, setData] = useState<OHLCResponseType | undefined>(undefined);
   const [inProgress, setInProgress] = useState(false);
+  const [lastTimeCall, seLastTimeCall] = useState(undefined);
   const { addLogMessage } = useKrakenDataContext();
-
   const { lastMessage: ohlcLastMessage, readyState } = useWebSocket(
     ohlcSocketUrl,
     {
       queryParams: { pair: pair, interval: interval },
     }
   );
-
   const handlePairChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setPair(e.target.value as any);
   };
@@ -39,39 +38,70 @@ export default function Chartview() {
     setInterval(e.target.value as any);
   };
 
+  const shouldFetch = (currentTime: number) => {
+    if (!lastTimeCall) {
+      return true;
+    } else {
+      const delta = lastTimeCall - currentTime;
+      const intervalSeconds = interval * 60;
+      const res = delta > intervalSeconds;
+      return res;
+    }
+  };
+
   const fetchOHLC = useCallback(
     (pair: string, interval: number) => {
-      console.log("fetched OHLC");
-      setInProgress(true);
-      fetch(
-        `http://localhost:8000/ohlc?pair=${encodeURIComponent(
-          pair
-        )}&interval=${interval}`
-      )
-        .then((response) => response.json())
-        .then((data: OHLCResponseType) => {
-          setData(data);
-          setInProgress(false);
-        })
-        .catch((err) => {
-          addLogMessage(err.message, LogLevel.ERROR);
-        });
+      const currentTime = new Date().getTime() / 1000;
+      if (!inProgress && shouldFetch(currentTime)) {
+        setInProgress(true);
+
+        console.log("fetch OHLC");
+        fetch(
+          `http://localhost:8000/ohlc?pair=${encodeURIComponent(
+            pair
+          )}&interval=${interval}`
+        )
+          .then((response) => response.json())
+          .then((data: OHLCResponseType) => {
+            setData(data);
+            data.candlestick.forEach((entry) => {
+              entry.x = new Date(entry.x * 1000);
+            });
+            data.trade_count.forEach((entry) => {
+              entry.x = new Date(entry.x * 1000);
+            });
+            data.volume.forEach((entry) => {
+              entry.x = new Date(entry.x * 1000);
+            });
+            data.vwap.forEach((entry) => {
+              entry.x = new Date(entry.x * 1000);
+            });
+            setInProgress(false);
+            seLastTimeCall(currentTime);
+          })
+          .catch((err) => {
+            addLogMessage(err.message, LogLevel.ERROR);
+          });
+      }
     },
     [addLogMessage]
   );
 
-  const debouncedFetchHandler = useCallback(debounce(fetchOHLC, 300), []);
-
   useEffect(() => {
-    debouncedFetchHandler(pair, interval);
+    if (lastTimeCall) {
+      fetchOHLC(pair, interval);
+    }
   }, [pair, interval]);
 
-  //   useEffect(() => {
-  //     if (ohlcLastMessage?.data) {
-  //       debugger;
-  //       console.log(JSON.parse(ohlcLastMessage?.data));
-  //     }
-  //   }, [ohlcLastMessage?.data]);
+  useEffect(() => {
+    fetchOHLC(pair, interval);
+  }, []);
+
+  useEffect(() => {
+    if (ohlcLastMessage?.data) {
+      fetchOHLC(pair, interval);
+    }
+  }, [ohlcLastMessage?.data]);
 
   const ds = {
     options: {
@@ -109,10 +139,6 @@ export default function Chartview() {
         },
         selection: {
           enabled: true,
-          xaxis: {
-            min: new Date("20 Jan 2017").getTime(),
-            max: new Date("10 Dec 2017").getTime(),
-          },
           fill: {
             color: "#ccc",
             opacity: 0.4,
@@ -207,6 +233,7 @@ export default function Chartview() {
             series={volumeChartConfig.series}
             type="bar"
             width={parent.current ? parent.current.clientWidth : 1000}
+            height="150"
           />
         </div>
       )}

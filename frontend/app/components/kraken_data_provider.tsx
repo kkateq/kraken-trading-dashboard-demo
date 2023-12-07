@@ -26,6 +26,7 @@ import {
 } from "./commons";
 import { debounce, throttle } from "lodash";
 import { useThrottle } from "@uidotdev/usehooks";
+import { Spinner } from "@material-tailwind/react";
 
 type KrakenDataContextType = {
   book: BookDataType | undefined;
@@ -308,6 +309,7 @@ export const KrakenDataProvider = ({ children }: Props) => {
       setSelectedBook(__book);
     }
   }, [orderBookLastMessage, selectedBook?.checksum, selectedPair]);
+  useEffect(() => () => console.log("unmount"), []);
 
   const addOrder = useCallback(
     (ordertype: OrderType, side: SideType, price: number) => {
@@ -452,6 +454,14 @@ export const KrakenDataProvider = ({ children }: Props) => {
     flattenAllTrades,
     addLogMessage,
   };
+
+  if (ctx.status.allSystems !== ReadyState.OPEN) {
+    return (
+      <div className="grid w-full h-full">
+        <Spinner />
+      </div>
+    );
+  }
 
   return (
     <KrakenContext.Provider value={ctx}>{children}</KrakenContext.Provider>
