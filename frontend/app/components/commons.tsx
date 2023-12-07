@@ -85,4 +85,28 @@ export type OrderResponseType = {
 
 export const WATCH_PAIRS = ["MATIC/USD", "BTC/USD"];
 
-export const INTERVALS = [1, 5, 15, 30, 60];
+export const INTERVALS = [1, 5, 15, 30, 60, 240, 1440, 10080, 21600];
+
+export const INTERVALS_LABELS = {
+  1: "1 min",
+  5: "5 min",
+  15: "15 min",
+  30: "30 min",
+  60: "1 hour",
+  240: "4 hour",
+  1440: "1 day",
+  10080: "1 week",
+  21600: "15 days",
+};
+
+type CandlestickEntry = { x: number; y: [number] };
+type VolumeEntry = { x: number; y: number };
+type TradesCountEntry = { x: number; y: number };
+type VWapEntry = { x: number; y: number };
+
+export type OHLCResponseType = {
+  candlestick: [CandlestickEntry];
+  volume: [VolumeEntry];
+  trade_count: [TradesCountEntry];
+  vwap: [VWapEntry];
+};

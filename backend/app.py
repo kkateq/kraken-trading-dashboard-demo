@@ -18,8 +18,8 @@ import uvicorn
 from starlette.config import Config
 from starlette.schemas import SchemaGenerator
 from starlette.responses import JSONResponse
-
 from starlette.middleware.cors import CORSMiddleware
+
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -180,46 +180,24 @@ async def list_positions(request):
 
 
 def transform_ohlc(data, pair):
-    _opens = []
-    _highs = []
-    _times = []
-    _lows = []
-    _closes = []
-    _vwaps = []
-    _volumes = []
-    _counts = []
+    ohlc = []
+    time_vwap = []
+    time_trades_count = []
+    time_volumes = []
+
     pair_ohlc = data[pair]
     for [time, openp, high, low, close, vwap, volume, count] in pair_ohlc:
-        date = datetime.fromtimestamp(time)
-        _times.append(str(date))
-        _opens.append(openp)
-        _highs.append(high)
-        _lows.append(low)
-        _closes.append(close)
-        _vwaps.append(vwap)
-        _volumes.append(volume)
-        _counts.append(count)
+        ohlc.append({"x": time, "y": [openp, high, low, close]})
+        time_volumes.append({"x": time, "y": volume})
+        time_trades_count.append({"x": time, "y": count})
+        time_vwap.append({"x": time, "y": vwap})
 
     return {
-        "time": _times,
-        "high": _highs,
-        "close": _closes,
-        "open": _opens,
-        "lows": _lows,
-        "counts": _counts,
-        "vwap": _vwaps,
-        "volume": _volumes,
+        "candlestick": ohlc,
+        "volume": time_volumes,
+        "trade_count": time_trades_count,
+        "vwap": time_vwap,
     }
-
-
-def transform_ohlc2(data, pair):
-    res = []
-
-    pair_ohlc = data[pair]
-    for [time, openp, high, low, close, vwap, volume, count] in pair_ohlc:
-        res.append({"x": time, "y": [openp, high, low, close]})
-
-    return res
 
 
 async def list_ohlc(request):
@@ -229,9 +207,10 @@ async def list_ohlc(request):
         interval = request.query_params["interval"]
         if pair and interval:
             ohlc_data = kraken_manager.bot.get_ohlc(pair, interval)
-            ohlc_data_tr = transform_ohlc2(ohlc_data, pair)
 
-            return JSONResponse(ohlc_data_tr)
+            ohlc_data_transformed = transform_ohlc(ohlc_data, pair)
+
+            return JSONResponse(ohlc_data_transformed)
         else:
             logger.error("Pair and interval parameters should be provided.")
     else:

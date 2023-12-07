@@ -16,3 +16,15 @@ python app.py
 ```
 
 Open browser to http://localhost:8000/
+
+
+#Code samples
+
+1. Count execution time
+```
+
+            start_time = time.perf_counter()
+           <!-- executed code -->
+            end_time = time.perf_counter()
+            print("{} SECONDS".format(end_time - start_time))
+```
