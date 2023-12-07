@@ -8,7 +8,6 @@ import MessageLog from "./messagelog";
 import { OrderForm } from "./orderform";
 import { useKrakenDataContext } from "./kraken_data_provider";
 import Chart from "./chart";
-import { useEffect } from "react";
 
 export default function Orderbook() {
   const {
@@ -16,7 +15,13 @@ export default function Orderbook() {
   } = useKrakenDataContext();
 
   return (
-    <div className="flex ml-1">
+    <div className="flex">
+      <div style={{ width: "800px", minWidth: "800px" }}>
+        <Chart />
+      </div>
+      <div className="w-full">
+        <Book />
+      </div>
       <div
         className="flex flex-col gap-2"
         style={{ width: "500px", minWidth: "500px" }}
@@ -34,15 +39,9 @@ export default function Orderbook() {
         <div>
           <Trades />
         </div>
-        <div>
+        <div className="items-end">
           <MessageLog />
         </div>
-      </div>
-      <div>
-        <Book />
-      </div>
-      <div className="w-full h-screen">
-        <Chart />
       </div>
     </div>
   );

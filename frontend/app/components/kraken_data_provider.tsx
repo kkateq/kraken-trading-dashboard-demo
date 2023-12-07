@@ -455,14 +455,6 @@ export const KrakenDataProvider = ({ children }: Props) => {
     addLogMessage,
   };
 
-  if (ctx.status.allSystems !== ReadyState.OPEN) {
-    return (
-      <div className="grid w-full h-full">
-        <Spinner />
-      </div>
-    );
-  }
-
   return (
     <KrakenContext.Provider value={ctx}>{children}</KrakenContext.Provider>
   );

@@ -180,7 +180,7 @@ const Bookview = () => {
 
   return (
     <div className="flex rounded text-sm" style={{ height: "95vh" }}>
-      <div className="ml-2" style={{ width: "500px" }}>
+      <div className="ml-2 w-full mr-2">
         {book && (
           <>
             <div className="space-x-1 mt-1 flex">

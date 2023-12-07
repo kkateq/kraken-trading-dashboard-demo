@@ -131,7 +131,7 @@ export default function Chartview() {
   const volumeChartConfig = {
     options: {
       chart: {
-        height: 160,
+        height: 120,
         type: "bar",
         brush: {
           enabled: true,
@@ -163,7 +163,7 @@ export default function Chartview() {
               },
               {
                 from: 1,
-                to: 10000,
+                to: 100000,
                 color: "#FEB019",
               },
             ],
@@ -184,10 +184,80 @@ export default function Chartview() {
           show: false,
         },
       },
+      legend: {
+        show: true,
+      },
     },
     series: [
       {
         data: data?.volume || [],
+      },
+    ],
+  };
+
+  const tradesChartConfig = {
+    options: {
+      chart: {
+        height: 120,
+        type: "bar",
+        brush: {
+          enabled: true,
+          target: "candles",
+        },
+        selection: {
+          enabled: true,
+          fill: {
+            color: "#ccc",
+            opacity: 0.4,
+          },
+          stroke: {
+            color: "#0D47A1",
+          },
+        },
+      },
+      dataLabels: {
+        enabled: false,
+      },
+      plotOptions: {
+        bar: {
+          columnWidth: "80%",
+          colors: {
+            ranges: [
+              {
+                from: -1000,
+                to: 0,
+                color: "#F15B46",
+              },
+              {
+                from: 1,
+                to: 100000,
+                color: "#FEB019",
+              },
+            ],
+          },
+        },
+      },
+      stroke: {
+        width: 0,
+      },
+      xaxis: {
+        type: "datetime",
+        axisBorder: {
+          offsetX: 13,
+        },
+      },
+      yaxis: {
+        labels: {
+          show: false,
+        },
+      },
+      legend: {
+        show: true,
+      },
+    },
+    series: [
+      {
+        data: data?.trade_count || [],
       },
     ],
   };
@@ -233,7 +303,14 @@ export default function Chartview() {
             series={volumeChartConfig.series}
             type="bar"
             width={parent.current ? parent.current.clientWidth : 1000}
-            height="150"
+            height="100"
+          />
+          <Chart
+            options={tradesChartConfig.options}
+            series={tradesChartConfig.series}
+            type="bar"
+            width={parent.current ? parent.current.clientWidth : 1000}
+            height="100"
           />
         </div>
       )}
