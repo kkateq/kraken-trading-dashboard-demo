@@ -14,6 +14,7 @@
     "@types/lodash": "^4.14.202",
     "@uidotdev/usehooks": "^2.4.1",
     "apexcharts": "^3.44.2",
+    "lightweight-charts": "^4.1.1",
     "lodash": "^4.17.21",
     "moment": "^2.29.4",
     "next": "14.0.3",

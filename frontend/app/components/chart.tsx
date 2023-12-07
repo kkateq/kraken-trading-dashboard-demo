@@ -12,18 +12,30 @@ import {
 import useWebSocket from "react-use-websocket";
 import WsStatusIcon from "./wsstatusicon";
 
-import Chart from "react-apexcharts";
+import { createChart } from "lightweight-charts";
 import { Spinner } from "@material-tailwind/react";
 
 export default function Chartview() {
   const parent = useRef(0);
+  const candleChartRef = useRef(null);
+  const volumeChartRef = useRef(null);
+  const tradesCountChartRef = useRef(null);
   const [ohlcSocketUrl] = useState("ws://localhost:8000/ws_ohlc");
   const [pair, setPair] = useState(WATCH_PAIRS[0]);
-  const [interval, setInterval] = useState(INTERVALS[1]);
+  const [interval, setInterval] = useState(INTERVALS[2]);
   const [data, setData] = useState<OHLCResponseType | undefined>(undefined);
   const [inProgress, setInProgress] = useState(false);
-  const [lastTimeCall, seLastTimeCall] = useState(undefined);
   const { addLogMessage } = useKrakenDataContext();
+  const [candleChart, setCandleChart] = useState(null);
+  const [volumeChart, setVolumeChart] = useState(null);
+  const [tradesChart, setTradesChart] = useState(null);
+  const [candleStickSeries, setCandleStickSeries] = useState(null);
+  const [volumeAreaSeries, setVolumeAreaSeries] = useState(null);
+  const [tradesCountAreaSeries, setTradesCountAreaSeries] = useState(null);
+  const [lastTimestamp, setLastTimestamp] = useState<number | undefined>(
+    undefined
+  );
+
   const { lastMessage: ohlcLastMessage, readyState } = useWebSocket(
     ohlcSocketUrl,
     {
@@ -38,59 +50,39 @@ export default function Chartview() {
     setInterval(e.target.value as any);
   };
 
-  const shouldFetch = (currentTime: number) => {
-    if (!lastTimeCall) {
-      return true;
-    } else {
-      const delta = lastTimeCall - currentTime;
-      const intervalSeconds = interval * 60;
-      const res = delta > intervalSeconds;
-      return res;
-    }
-  };
-
   const fetchOHLC = useCallback(
     (pair: string, interval: number) => {
-      const currentTime = new Date().getTime() / 1000;
-      if (!inProgress && shouldFetch(currentTime)) {
-        setInProgress(true);
+      if (!inProgress) {
+        setInProgress((prev) => {
+          if (!prev) {
+            console.log("fetch OHLC");
+            fetch(
+              `http://localhost:8000/ohlc?pair=${encodeURIComponent(
+                pair
+              )}&interval=${interval}`
+            )
+              .then((response) => response.json())
+              .then((data: OHLCResponseType) => {
+                setData(data);
+                setLastTimestamp(new Date().getTime() / 1000);
+              })
+              .catch((err) => {
+                addLogMessage(err.message, LogLevel.ERROR);
+              })
+              .finally(() => {
+                setInProgress(false);
+              });
+          }
 
-        console.log("fetch OHLC");
-        fetch(
-          `http://localhost:8000/ohlc?pair=${encodeURIComponent(
-            pair
-          )}&interval=${interval}`
-        )
-          .then((response) => response.json())
-          .then((data: OHLCResponseType) => {
-            setData(data);
-            data.candlestick.forEach((entry) => {
-              entry.x = new Date(entry.x * 1000);
-            });
-            data.trade_count.forEach((entry) => {
-              entry.x = new Date(entry.x * 1000);
-            });
-            data.volume.forEach((entry) => {
-              entry.x = new Date(entry.x * 1000);
-            });
-            data.vwap.forEach((entry) => {
-              entry.x = new Date(entry.x * 1000);
-            });
-            setInProgress(false);
-            seLastTimeCall(currentTime);
-          })
-          .catch((err) => {
-            addLogMessage(err.message, LogLevel.ERROR);
-          });
+          return true;
+        });
       }
     },
     [addLogMessage]
   );
 
   useEffect(() => {
-    if (lastTimeCall) {
-      fetchOHLC(pair, interval);
-    }
+    fetchOHLC(pair, interval);
   }, [pair, interval]);
 
   useEffect(() => {
@@ -99,168 +91,107 @@ export default function Chartview() {
 
   useEffect(() => {
     if (ohlcLastMessage?.data) {
-      fetchOHLC(pair, interval);
+      const [time, etime, open, high, low, close, vwap, volume, count] =
+        JSON.parse(JSON.parse(ohlcLastMessage?.data));
+      if (lastTimestamp && time > lastTimestamp) {
+        if (candleStickSeries) {
+          candleStickSeries.update({
+            time: parseFloat(time),
+            open: parseFloat(open),
+            high: parseFloat(high),
+            low: parseFloat(low),
+            close: parseFloat(close),
+          });
+        }
+        if (volumeAreaSeries) {
+          volumeAreaSeries.update({
+            time: parseFloat(time),
+            value: parseFloat(volume),
+          });
+        }
+        if (tradesCountAreaSeries) {
+          tradesCountAreaSeries.update({
+            time: parseFloat(time),
+            value: parseFloat(count),
+          });
+        }
+      }
     }
   }, [ohlcLastMessage?.data]);
 
-  const ds = {
-    options: {
-      chart: {
-        id: "candles",
-        type: "candlestick",
-      },
-      yaxis: {
-        lines: {
-          show: true,
+  useEffect(() => {
+    if (!candleChart && data && candleChartRef?.current) {
+      const _chart = createChart(candleChartRef?.current, {
+        layout: {
+          textColor: "black",
+          background: { type: "solid", color: "white" },
         },
-      },
-      xaxis: {
-        type: "datetime",
-        lines: {
-          show: true,
-        },
-      },
-    },
-    series: [
-      {
-        data: data?.candlestick || [],
-      },
-    ],
-  };
+      });
 
-  const volumeChartConfig = {
-    options: {
-      chart: {
-        height: 120,
-        type: "bar",
-        brush: {
-          enabled: true,
-          target: "candles",
-        },
-        selection: {
-          enabled: true,
-          fill: {
-            color: "#ccc",
-            opacity: 0.4,
-          },
-          stroke: {
-            color: "#0D47A1",
-          },
-        },
-      },
-      dataLabels: {
-        enabled: false,
-      },
-      plotOptions: {
-        bar: {
-          columnWidth: "80%",
-          colors: {
-            ranges: [
-              {
-                from: -1000,
-                to: 0,
-                color: "#F15B46",
-              },
-              {
-                from: 1,
-                to: 100000,
-                color: "#FEB019",
-              },
-            ],
-          },
-        },
-      },
-      stroke: {
-        width: 0,
-      },
-      xaxis: {
-        type: "datetime",
-        axisBorder: {
-          offsetX: 13,
-        },
-      },
-      yaxis: {
-        labels: {
-          show: false,
-        },
-      },
-      legend: {
-        show: true,
-      },
-    },
-    series: [
-      {
-        data: data?.volume || [],
-      },
-    ],
-  };
+      const _candlestickSeries = _chart.addCandlestickSeries({
+        upColor: "#26a69a",
+        downColor: "#ef5350",
+        borderVisible: false,
+        wickUpColor: "#26a69a",
+        wickDownColor: "#ef5350",
+      });
 
-  const tradesChartConfig = {
-    options: {
-      chart: {
-        height: 120,
-        type: "bar",
-        brush: {
-          enabled: true,
-          target: "candles",
+      _candlestickSeries.setData(data.candlestick);
+
+      //   const vwapSeries = _chart.addLineSeries();
+      //   vwapSeries.setData(data.vwap);
+      _chart.timeScale().fitContent();
+
+      setCandleChart(_chart);
+      setCandleStickSeries(_candlestickSeries);
+    }
+  }, [data, candleChartRef?.current]);
+
+  useEffect(() => {
+    if (!volumeChart && data && volumeChartRef?.current) {
+      const _chart = createChart(volumeChartRef?.current, {
+        layout: {
+          textColor: "black",
+          background: { type: "solid", color: "white" },
         },
-        selection: {
-          enabled: true,
-          fill: {
-            color: "#ccc",
-            opacity: 0.4,
-          },
-          stroke: {
-            color: "#0D47A1",
-          },
+      });
+
+      const _volumeAreaSeries = _chart.addHistogramSeries({
+        color: "#32d76c",
+        base: 5,
+      });
+
+      _volumeAreaSeries.setData(data.volume);
+
+      _chart.timeScale().fitContent();
+
+      setVolumeChart(_chart);
+      setVolumeAreaSeries(_volumeAreaSeries);
+    }
+  }, [data, volumeChartRef?.current]);
+
+  useEffect(() => {
+    if (!tradesChart && data && tradesCountChartRef?.current) {
+      const _chart = createChart(tradesCountChartRef?.current, {
+        layout: {
+          textColor: "black",
+          background: { type: "solid", color: "white" },
         },
-      },
-      dataLabels: {
-        enabled: false,
-      },
-      plotOptions: {
-        bar: {
-          columnWidth: "80%",
-          colors: {
-            ranges: [
-              {
-                from: -1000,
-                to: 0,
-                color: "#F15B46",
-              },
-              {
-                from: 1,
-                to: 100000,
-                color: "#FEB019",
-              },
-            ],
-          },
-        },
-      },
-      stroke: {
-        width: 0,
-      },
-      xaxis: {
-        type: "datetime",
-        axisBorder: {
-          offsetX: 13,
-        },
-      },
-      yaxis: {
-        labels: {
-          show: false,
-        },
-      },
-      legend: {
-        show: true,
-      },
-    },
-    series: [
-      {
-        data: data?.trade_count || [],
-      },
-    ],
-  };
+      });
+
+      const _tradesCountAreaSeries = _chart.addHistogramSeries({
+        color: "#ca6c29",
+        base: 5,
+      });
+
+      _tradesCountAreaSeries.setData(data.trade_count);
+
+      _chart.timeScale().fitContent();
+
+      setTradesChart(_chart);
+      setTradesCountAreaSeries(_tradesCountAreaSeries);
+    }
+  }, [data, volumeChartRef?.current]);
 
   return (
     <div ref={parent} className="border-solid border-2 border-gray-300 m-2">
@@ -290,30 +221,24 @@ export default function Chartview() {
         </div>
       </div>
 
-      {data && !inProgress && (
-        <div>
-          <Chart
-            options={ds.options}
-            series={ds.series}
-            type="candlestick"
-            width={parent.current ? parent.current.clientWidth : 1000}
-          />
-          <Chart
-            options={volumeChartConfig.options}
-            series={volumeChartConfig.series}
-            type="bar"
-            width={parent.current ? parent.current.clientWidth : 1000}
-            height="100"
-          />
-          <Chart
-            options={tradesChartConfig.options}
-            series={tradesChartConfig.series}
-            type="bar"
-            width={parent.current ? parent.current.clientWidth : 1000}
-            height="100"
-          />
-        </div>
-      )}
+      <div className="w-full h-full flex flex-col">
+        <div
+          className="w-full"
+          style={{ height: "500px" }}
+          ref={candleChartRef}
+        />
+        <div
+          className="w-full"
+          style={{ height: "150px" }}
+          ref={volumeChartRef}
+        />
+        <div
+          className="w-full"
+          style={{ height: "150px" }}
+          ref={tradesCountChartRef}
+        />
+      </div>
+
       {inProgress && <Spinner />}
     </div>
   );

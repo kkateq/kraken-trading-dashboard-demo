@@ -16,7 +16,7 @@ export default function Orderbook() {
 
   return (
     <div className="flex">
-      <div style={{ width: "600px", minWidth: "600px" }}>
+      <div style={{ width: "800px", minWidth: "800px" }}>
         <Chart />
       </div>
       <div className="w-full">

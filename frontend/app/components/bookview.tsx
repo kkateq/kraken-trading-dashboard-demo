@@ -183,8 +183,8 @@ const Bookview = () => {
       <div className="flex ml-2 w-full mr-2">
         {book && (
           <>
-            <div className="w-full">Chart</div>
-            <div className="flex flex-col">
+            {/* <div className="w-full">Imbalance Chart</div> */}
+            <div className="flex flex-col w-full">
               <div className="space-x-1 mt-1 flex">
                 <div className="bold mr-4">
                   <div className="flex border-solid border-2 rounded border-gray-400">

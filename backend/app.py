@@ -19,7 +19,7 @@ from starlette.config import Config
 from starlette.schemas import SchemaGenerator
 from starlette.responses import JSONResponse
 from starlette.middleware.cors import CORSMiddleware
-
+from datetime import datetime
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -179,7 +179,7 @@ async def list_positions(request):
         return JSONResponse([])
 
 
-def transform_ohlc(data, pair):
+def transform_ohlc_apex_charts(data, pair):
     ohlc = []
     time_vwap = []
     time_trades_count = []
@@ -200,6 +200,35 @@ def transform_ohlc(data, pair):
     }
 
 
+def transform_ohlc_tradingview(data, pair):
+    ohlc = []
+    time_vwap = []
+    time_trades_count = []
+    time_volumes = []
+
+    pair_ohlc = data[pair]
+    for [time, openp, high, low, close, vwap, volume, count] in pair_ohlc:
+        ohlc.append(
+            {
+                "time": time,
+                "open": float(openp),
+                "high": float(high),
+                "low": float(low),
+                "close": float(close),
+            }
+        )
+        time_volumes.append({"time": time, "value": float(volume)})
+        time_trades_count.append({"time": time, "value": float(count)})
+        time_vwap.append({"time": time, "value": float(vwap)})
+
+    return {
+        "candlestick": ohlc,
+        "volume": time_volumes,
+        "trade_count": time_trades_count,
+        "vwap": time_vwap,
+    }
+
+
 async def list_ohlc(request):
     global kraken_manager
     if kraken_manager and kraken_manager.bot:
@@ -208,7 +237,7 @@ async def list_ohlc(request):
         if pair and interval:
             ohlc_data = kraken_manager.bot.get_ohlc(pair, interval)
 
-            ohlc_data_transformed = transform_ohlc(ohlc_data, pair)
+            ohlc_data_transformed = transform_ohlc_tradingview(ohlc_data, pair)
 
             return JSONResponse(ohlc_data_transformed)
         else:
