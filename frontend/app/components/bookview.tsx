@@ -11,18 +11,23 @@ import {
 import { useKrakenDataContext } from "./kraken_data_provider";
 import ImbalanceChart from "./imbalance";
 
-const Bookview = () => {
+type Props = {
+  book: [BookPriceType];
+  priceToTradesTransposed;
+};
+
+const Bookview = ({ book, priceToTradesTransposed }: Props) => {
   const [temporaryOrders, setTemporaryOrders] = useState({});
 
   const {
-    book,
+    // book,
     orders,
     addOrder,
     selectedPair,
     setSelectedPair,
-    priceToTradesTransposed,
+    // priceToTradesTransposed,
     orderAmount,
-    roundPrice,
+    // roundPrice,
   } = useKrakenDataContext();
 
   useEffect(() => {
