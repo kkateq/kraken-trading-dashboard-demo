@@ -9,6 +9,7 @@ import {
   WATCH_PAIRS,
 } from "./commons";
 import { useKrakenDataContext } from "./kraken_data_provider";
+import ImbalanceChart from "./imbalance";
 
 const Bookview = () => {
   const [temporaryOrders, setTemporaryOrders] = useState({});
@@ -49,6 +50,8 @@ const Bookview = () => {
     ask_volume_total_percentage,
     bids_volume_total_percentage,
     peg_price,
+    large_volume_history,
+    imbalance_history,
   } = book || {};
 
   const bidColor = "blue";
@@ -183,7 +186,12 @@ const Bookview = () => {
       <div className="flex ml-2 w-full mr-2">
         {book && (
           <>
-            {/* <div className="w-full">Imbalance Chart</div> */}
+            <div className="w-full">
+              <ImbalanceChart
+                imbalanceHistory={imbalance_history}
+                largeVolumeHistory={large_volume_history}
+              />
+            </div>
             <div className="flex flex-col w-full">
               <div className="space-x-1 mt-1 flex">
                 <div className="bold mr-4">

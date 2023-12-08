@@ -45,6 +45,16 @@ export type BookPriceType = {
   bid_ps: number;
 };
 
+export type ImbalanceHistoryNode = {
+  time: number;
+  value: number;
+};
+
+export type LargeVolumeHistoryNode = {
+  time: number;
+  value: number;
+};
+
 export type BookDataType = {
   depth: number;
   data: [BookPriceType];
@@ -59,6 +69,8 @@ export type BookDataType = {
   checksum: number;
   best_bid: number;
   best_ask: number;
+  large_volume_history: [LargeVolumeHistoryNode];
+  imbalance_history: [ImbalanceHistoryNode];
 };
 
 export type TradeResponseType = {

@@ -71,16 +71,15 @@ def calculate_imbalance(bid_volume, ask_volume):
         best_bid_volume + best_ask_volume
     )
     t = time.time()
-    imbalance_history.append({"x": t, "y": imbalance})
+    imbalance_history.append({"time": t, "value": imbalance})
     large_volume_history.append(
         {
-            "x": t,
-            "y": best_bid_volume
+            "time": t,
+            "value": best_bid_volume
             if imbalance > 0.5
             else (best_ask_volume if imbalance < -0.5 else 0),
         }
     )
-    return imbalance
 
 
 def transform_book(book, depth, pair, checksum):
@@ -90,7 +89,7 @@ def transform_book(book, depth, pair, checksum):
     ask_volume = [round(j) for _, j in asks]
     bid_price = [i for i, _ in bids]
     ask_price = [i for i, _ in asks]
-    imbalance = calculate_imbalance(bid_volume, ask_volume)
+    calculate_imbalance(bid_volume, ask_volume)
     peg_price = (bid_price[0] + ask_price[0]) / 2
     best_bid = bid_price[0]
     best_ask = ask_price[0]
@@ -152,7 +151,6 @@ def transform_book(book, depth, pair, checksum):
         "checksum": checksum,
         "best_bid": best_bid,
         "best_ask": best_ask,
-        "imbalance": imbalance,
         "imbalance_history": imbalance_history,
         "large_volume_history": large_volume_history,
     }
