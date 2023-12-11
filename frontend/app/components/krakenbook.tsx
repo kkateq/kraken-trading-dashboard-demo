@@ -8,22 +8,43 @@ import {
   useEffect,
 } from "react";
 import WsStatusIcon from "./wsstatusicon";
-
+import _ from "lodash";
 import useWebSocket, { ReadyState } from "react-use-websocket";
+import Bookview from "./bookview";
 
 type Props = {
   pair: string;
   depth: number;
 };
 
+export enum Side {
+  BID = "bid",
+  ASK = "ask",
+}
+
+type BookEntryType = {
+  price: string;
+  volume: string;
+  timestamp: string;
+  type: Side;
+};
+
+type BookType = {
+  ask: { [price: string]: BookEntryType };
+  bid: { [price: string]: BookEntryType };
+  checksum: string;
+};
+
+type UpdateRecord = [string, string, string, string];
+
 export default function Krakenbook({ pair, depth }: Props) {
   const didUnmount = useRef(false);
   const [krakenWsUrl] = useState("wss://ws.kraken.com/");
   const [channelId, setChannelId] = useState(undefined);
-  const [error, setError] = useState(undefined);
+  const [error, setError] = useState<string | undefined>(undefined);
   const handleReconnectStop = useCallback(() => sendMessage("Hello"), []);
-  const [bids, setBids] = useState(undefined);
-  const [asks, setAsks] = useState(undefined);
+  const [book, setBook] = useState<BookType | undefined>(undefined);
+
   const { sendMessage, lastMessage, lastJsonMessage, readyState } =
     useWebSocket(krakenWsUrl, {
       heartbeat: {
@@ -59,57 +80,147 @@ export default function Krakenbook({ pair, depth }: Props) {
     return () => {
       didUnmount.current = true;
     };
-  }, []);
+  }, [depth, sendMessage]);
 
   const isObject = (value: any) => {
     return typeof value === "object" && !Array.isArray(value) && value !== null;
   };
 
-  const convertToMap = (arr: [any]) => {
-    const transposed = arr.reduce((acc, trade) => {
-      // @ts-ignore
-      if (!acc) {
-        acc = {};
+  const updateBook = useCallback(
+    (
+      updateList: [UpdateRecord] | undefined,
+      side: Side,
+      checksum: string = ""
+    ) => {
+      if (!updateList) {
+        return;
       }
-      if (trade) {
-        acc[parseFloat(trade[0])] = trade;
+
+      var updatedBook = book ? { ...book } : {};
+      if (!updatedBook[side]) {
+        updatedBook = { ...updateBook, [side]: {} };
       }
-      return acc;
-    }, {});
 
-    return transposed;
-  };
+      const updateSideObj = updatedBook[side];
+      if (updateSideObj) {
+        updateList.forEach((el: UpdateRecord) => {
+          const vol = parseFloat(el[1]);
+          const timestamp = parseFloat(el[2]);
+          if (vol > 0) {
+            const prevTimestamp = updateSideObj[el[0]]
+              ? updateSideObj[el[0]].timestamp
+              : null;
+            if (
+              !prevTimestamp ||
+              (prevTimestamp &&
+                parseFloat(prevTimestamp) < parseFloat(timestamp))
+            ) {
+              updateSideObj[el[0]] = {
+                price: el[0],
+                volume: el[1],
+                timestamp: el[2],
+                type: side,
+              };
+            }
+          } else {
+            delete updateSideObj[el[0]];
+          }
+        });
 
-  const updateBids = (new_bids: [any]) => {
-    if (bids) {
-      const _bids = { ...bids };
+        setBook((prev: BookType) => ({
+          ...(prev || {}),
+          [side]: updateSideObj,
+          checksum,
+        }));
+      }
+    },
+    [book]
+  );
 
-      new_bids.forEach((el) => {
-        _bids[parseFloat(el[0])] = el;
-      });
-
-      // @ts-ignore
-      setBids(_bids);
+  const makeCRCTable = () => {
+    var c;
+    var crcTable = [];
+    for (var n = 0; n < 256; n++) {
+      c = n;
+      for (var k = 0; k < 8; k++) {
+        c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+      }
+      crcTable[n] = c;
     }
+    return crcTable;
   };
 
-  const updateAsks = (new_asks: [any]) => {
-    if (asks) {
-      const _asks = { ...asks };
+  const crc32 = useCallback((str: string) => {
+    var crcTable = window.crcTable || (window.crcTable = makeCRCTable());
+    var crc = 0 ^ -1;
 
-      new_asks.forEach((el) => {
-        _asks[parseFloat(el[0])] = el;
-      });
-
-      // @ts-ignore
-      setAsks(_asks);
+    for (var i = 0; i < str.length; i++) {
+      crc = (crc >>> 8) ^ crcTable[(crc ^ str.charCodeAt(i)) & 0xff];
     }
-  };
+
+    return (crc ^ -1) >>> 0;
+  }, []);
+
+  const parsePrice = (p: string) => parseInt(p.replace(".", "")).toString();
+
+  const reduceTrade = useCallback(
+    (_book: BookType, side: Side): string => {
+      if (!book) {
+        return "";
+      }
+      const top_10 = _.slice(_.keys(_book[side]), 0, 10);
+      return top_10.reduce((acc, price: string) => {
+        // @ts-ignore
+        if (!acc) {
+          acc = "";
+        }
+
+        const a1 = parsePrice(price);
+        const v1 = parsePrice(_book[side][price].volume);
+        acc = acc + a1 + v1;
+
+        return acc;
+      }, "");
+    },
+    [book]
+  );
+
+  const isBookValid = useCallback(
+    (b: BookType, checksum: string): boolean => {
+      const res = reduceTrade(b, Side.ASK) + reduceTrade(b, Side.BID);
+
+      const p32 = crc32(res);
+      return p32.toString() === checksum;
+    },
+    [crc32, reduceTrade]
+  );
+
+  useEffect(() => {
+    if (book?.checksum) {
+      const isValid = isBookValid(book, book.checksum);
+
+      if (!isValid) {
+        setError("Book is invalid. Resubscribing...");
+
+        sendMessage(
+          JSON.stringify({
+            event: "subscribe",
+            pair: ["MATIC/USD"],
+            subscription: {
+              name: "book",
+              depth: depth,
+            },
+          })
+        );
+      } else {
+        setError("");
+      }
+    }
+  }, [book?.checksum]);
 
   useEffect(() => {
     if (lastMessage?.data) {
       const data = JSON.parse(lastMessage?.data);
-      //   debugger;
       if (
         isObject(data) &&
         data.event === "subscriptionStatus" &&
@@ -133,21 +244,20 @@ export default function Krakenbook({ pair, depth }: Props) {
             name === `book-${depth}`
           ) {
             if (
-              !bids &&
-              !asks &&
+              !book &&
               value?.as &&
               value.as.length === depth &&
               value?.bs &&
               value.bs.length === depth
             ) {
-              setBids(convertToMap(value?.bs));
-              setAsks(convertToMap(value?.as));
+              updateBook(value?.bs, Side.BID);
+              updateBook(value?.as, Side.ASK);
             } else {
               if (value?.b) {
-                updateBids(value.b);
+                updateBook(value.b, Side.BID, value.c);
               }
               if (value?.a) {
-                updateAsks(value.a);
+                updateBook(value.a, Side.ASK, value.c);
               }
             }
           }
@@ -156,62 +266,13 @@ export default function Krakenbook({ pair, depth }: Props) {
     }
   }, [lastMessage?.data]);
 
-  const renderBids = () => {
-    if (!bids) {
-      return null;
-    }
-    const keys = Object.keys(bids).sort().reverse();
-    return (
-      <>
-        {keys.map((price) => {
-          const vol = Math.round(bids[price][1]);
-          return (
-            <div key={price} className="flex text-blue-800">
-              <div className="flex-1 text-right">
-                {Math.round(bids[price][1])}
-              </div>
-              <div className="flex-1 text-center">{price}</div>
-              <div className="flex-1"></div>
-            </div>
-          );
-        })}
-      </>
-    );
-  };
-
-  const renderAsks = () => {
-    if (!asks) {
-      return null;
-    }
-
-    const keys = Object.keys(asks).sort().reverse();
-    return (
-      <>
-        {keys.map((price) => {
-          const vol = Math.round(asks[price][1]);
-          return vol > 0 ? (
-            <div key={price} className="flex text-red-800">
-              <div className="flex-1"></div>
-              <div className="flex-1 text-center">{price}</div>
-              <div className="flex-1 text-left">{vol}</div>
-            </div>
-          ) : null;
-        })}
-      </>
-    );
-  };
-
   return (
-    <div className="flex" style={{ width: "800px" }}>
-      <WsStatusIcon readyState={readyState} />
-      {error && <div className="text-red-900">{error}</div>}
-      <div className="bg-white overflow-hidden flex flex-col h-full border-solid border-2 rounded border-gray-400 p-1 w-full">
-        <div>
-          {renderAsks()}
-          <div>mid</div>
-          {renderBids()}
-        </div>
+    <div>
+      <div>
+        <WsStatusIcon readyState={readyState} />
+        <div>{error}</div>
       </div>
+      {/* <Bookview book={book} />; */}
     </div>
   );
 }

@@ -6,8 +6,8 @@ type Props = {
 
 export default function WsStatusIcon({ readyState }: Props) {
   const statusColor = {
-    [ReadyState.CONNECTING]: "teal",
-    [ReadyState.OPEN]: "greenyellow",
+    [ReadyState.CONNECTING]: "greenyellow",
+    [ReadyState.OPEN]: "teal",
     [ReadyState.CLOSING]: "yellow",
     [ReadyState.CLOSED]: "red",
     [ReadyState.UNINSTANTIATED]: "ivory",
