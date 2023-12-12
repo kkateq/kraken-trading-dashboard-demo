@@ -1,16 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import {
-  Order,
-  OrderType,
-  Side,
-  SideType,
-  BookPriceType,
-  WATCH_PAIRS,
-  BookDataType,
-} from "./commons";
-import { useKrakenDataContext } from "./kraken_data_provider";
-import ImbalanceChart from "./imbalance";
+import { Order, Side, SideType, BookPriceType, BookDataType } from "./commons";
 
 type Props = {
   book: BookDataType | undefined;
@@ -18,46 +8,12 @@ type Props = {
 };
 
 const Bookview = ({ book }: Props) => {
-  // const [temporaryOrders, setTemporaryOrders] = useState({});
-
-  // const {
-  //   // book,
-  //   orders,
-  //   addOrder,
-  //   selectedPair,
-  //   setSelectedPair,
-  //   // priceToTradesTransposed,
-  //   orderAmount,
-  //   // roundPrice,
-  // } = useKrakenDataContext();
-
-  // useEffect(() => {
-  //   if (orders.length === 0 && Object.keys(temporaryOrders).length > 0) {
-  //     setTemporaryOrders({});
-  //   } else {
-  //     const newOrders = {};
-  //     orders.forEach((order) => {
-  //       newOrders[order.value.descr.price] = {
-  //         side: order.value.descr.type,
-  //         type: order.value.vol,
-  //         vol: orderAmount,
-  //       };
-  //     });
-
-  //     setTemporaryOrders(newOrders);
-  //   }
-  // }, [orders]);
-
   const {
     data,
     depth,
-    ask_volume_total,
-    bid_volume_total,
     ask_volume_total_percentage,
     bids_volume_total_percentage,
-    peg_price,
-    // large_volume_history,
-    // imbalance_history,
+    pair,
   } = book || {};
 
   const bidColor = "blue";
@@ -137,10 +93,6 @@ const Bookview = ({ book }: Props) => {
     // addOrder(Order.market, Side.sell, price);
   };
 
-  const handlePairChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    // setSelectedPair(e.target.value as any);
-  };
-
   const renderPosition = (price: number, renderSide: Side) => {
     // const pos = priceToTradesTransposed[price];
 
@@ -188,25 +140,19 @@ const Bookview = ({ book }: Props) => {
   };
 
   return (
-    <div className="flex rounded text-sm" style={{ height: "95vh" }}>
+    <div className="flex rounded text-sm" style={{ height: "97vh" }}>
       <div className="flex ml-2 w-full mr-2">
         {book && (
           <>
-            {/* <div className="w-full">
-              <ImbalanceChart
-                imbalanceHistory={imbalance_history}
-                largeVolumeHistory={large_volume_history}
-              />
-            </div> */}
             <div className="flex flex-col w-full">
-              <div className="space-x-1 mt-1 flex">
-                <div className="bold mr-4"></div>
-                <span className={`w-full text-${bidColor}-800`}>
-                  {bid_volume_total}({bids_volume_total_percentage}%)
-                </span>
-                <span className={`w-full  text-${askColor}-800`}>
-                  {ask_volume_total}({ask_volume_total_percentage})%
-                </span>
+              <div className="space-x-1 mt-1 flex  text-xs">
+                <div className={`text-${bidColor}-800`}>
+                  {bids_volume_total_percentage}%
+                </div>
+                <span>-</span>
+                <div className={`text-${askColor}-800`}>
+                  {ask_volume_total_percentage}%
+                </div>
               </div>
               <div className="bg-white overflow-hidden flex flex-col h-full border-solid border-2 rounded border-gray-400 p-1">
                 <div className="overflow-auto divide-y">
@@ -282,9 +228,6 @@ const Bookview = ({ book }: Props) => {
                     </div>
                   ))}
                 </div>
-              </div>
-              <div className="mt-2 text-xs">
-                <h2 className="text-gray-600 mb-1">Order book depth {depth}</h2>
               </div>
             </div>
           </>

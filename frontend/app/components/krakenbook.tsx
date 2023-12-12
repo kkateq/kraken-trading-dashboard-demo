@@ -35,7 +35,7 @@ export default function Krakenbook({ pair, depth }: Props) {
   const didUnmount = useRef(false);
   const [krakenWsUrl] = useState("wss://ws.kraken.com/");
   const [channelId, setChannelId] = useState(undefined);
-  const [error, setError] = useState<string | undefined>(undefined);
+  const [valid, setValid] = useState<boolean>(false);
   const handleReconnectStop = useCallback(() => sendMessage("Hello"), []);
   const [book, setBook] = useState<BookType>();
 
@@ -184,13 +184,7 @@ export default function Krakenbook({ pair, depth }: Props) {
   useEffect(() => {
     if (book?.checksum) {
       const isValid = isBookValid(book, book.checksum);
-
-      if (!isValid) {
-        setError("Book is invalid");
-        // setChannelId(undefined);
-      } else {
-        setError("Valid");
-      }
+      setValid(isValid);
     }
   }, [book?.checksum]);
 
@@ -322,12 +316,22 @@ export default function Krakenbook({ pair, depth }: Props) {
   };
 
   return (
-    <div>
-      <div className="flex items-center m-2">
+    <div className="h-full ">
+      <Bookview book={getBookSorted()} />
+      <div className="flex items-center ml-2 space-x-2 text-gray-600 text-xs divide-x">
         <WsStatusIcon readyState={readyState} />
-        <div className="text-xs">{error}</div>
+        <h2 className="text-xs">Depth: {depth}</h2> <div>|</div>
+        <div className="text-xs">
+          Checksum:{" "}
+          {valid ? (
+            <span className="text-green-600">valid</span>
+          ) : (
+            <span className="text-red-600">invalid</span>
+          )}
+        </div>
+        <div>|</div>
+        <div>Pair: {pair}</div>
       </div>
-      <Bookview book={getBookSorted()} />;
     </div>
   );
 }
