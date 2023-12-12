@@ -24,3 +24,23 @@ export const crc32 = (str: string) => {
 
 export const parsePrice = (p: string) =>
   parseInt(p.replace(".", "")).toString();
+
+export const roundPrice = (value: number, price_decimals: number) => {
+  if (price_decimals > 0) {
+    const precision = Math.pow(10, price_decimals);
+
+    if (precision) {
+      return Math.round(value * precision) / precision;
+    }
+  }
+  return value;
+};
+
+export const isObject = (value: any) => {
+  return typeof value === "object" && !Array.isArray(value) && value !== null;
+};
+
+export const startOfTheDay = () => {
+  const now = new Date().getTime();
+  return now - (now % 86400000);
+};

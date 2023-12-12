@@ -1,12 +1,29 @@
 import { IconButton, Tooltip } from "@material-tailwind/react";
-
+import { TradeResponseType } from "./commons";
+import { roundPrice } from "./utils";
 import { useKrakenDataContext } from "./kraken_data_provider";
 
-export default function Trades() {
-  const { book, trades, roundPrice, closeTrade, flattenTrade, fetchTrades } =
-    useKrakenDataContext();
+type Props = {
+  pegValue: number;
+  trades: TradeResponseType[];
+  refetchTrades: () => void;
+  closeTrade: (txid: string) => void;
+  flattenTrade: (txid: string) => void;
+  priceDecimals: number;
+};
 
-  const pegValue = book?.peg_price || 0;
+export default function Trades() {
+  const {
+    // pegValue,
+    trades,
+    // refetchTrades,
+    // closeTrade,
+    // flattenTrade,
+    // priceDecimals,
+  } = useKrakenDataContext();
+
+  const pegValue = 0;
+  const priceDecimals = 0;
 
   return (
     <div className="flex flex-col overflow-auto h-full bg-gray-200 border-2 rounded border-blue-400 p-2">
@@ -20,7 +37,7 @@ export default function Trades() {
 
           <Tooltip content="Refresh">
             <button
-              onClick={() => fetchTrades()}
+              // onClick={refetchTrades}
               className="border-2 rounded border-gray-400 hover:bg-gray-300"
             >
               <svg
@@ -74,11 +91,11 @@ export default function Trades() {
                     >
                       {trade.type}
                     </td>
-                    <td>{roundPrice(trade.vol)}</td>
-                    <td>{roundPrice(trade.entryPrice)}</td>
-                    <td>{roundPrice(trade.cost)}</td>
+                    <td>{Math.round(trade.vol)}</td>
+                    <td>{roundPrice(trade.cost / trade.vol, priceDecimals)}</td>
+                    <td>{roundPrice(trade.cost, priceDecimals)}</td>
                     <td className={`font-bold ${pegColor}`}>
-                      {roundPrice(pl)}$
+                      {roundPrice(pl, priceDecimals)}$
                     </td>
                     <td>
                       <div className="flex space-x-2 justify-end">
@@ -86,7 +103,7 @@ export default function Trades() {
                           <IconButton
                             color="orange"
                             size="sm"
-                            onClick={() => closeTrade(trade)}
+                            // onClick={() => closeTrade(trade)}
                           >
                             <svg
                               xmlns="http://www.w3.org/2000/svg"
@@ -108,7 +125,7 @@ export default function Trades() {
                           <IconButton
                             color="gray"
                             size="sm"
-                            onClick={() => flattenTrade(trade)}
+                            // onClick={() => flattenTrade(trade)}
                           >
                             <svg
                               xmlns="http://www.w3.org/2000/svg"

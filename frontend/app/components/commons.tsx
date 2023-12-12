@@ -73,9 +73,22 @@ export type BookDataType = {
   // imbalance_history: [ImbalanceHistoryNode];
 };
 
+// {cost: "0.791800";
+// fee: "0.001267";
+// margin: "0.197950";
+// ordertxid: "OVHOO6-BAQB6-E6TFTP";
+// ordertype: "limit";
+// pair: "MATIC/USD";
+// posstatus: "Closing";
+// postxid: "TZMQAG-LXVCV-2O223N";
+// price: "0.791800";
+// time: "1701777479.445169";
+// type: "sell";
+// vol: "1.00000000";}
 export type TradeResponseType = {
   type: SideType;
   vol: number;
+  time: number;
   cost: number;
   leverage: number;
   pair: string;

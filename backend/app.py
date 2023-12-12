@@ -11,6 +11,7 @@ from starlette.templating import Jinja2Templates
 from handlers.orderbook import start_book
 from handlers.orders import start_orders
 from handlers.trades import start_trades
+from handlers.token import get_token
 from handlers.ohlc import start_ohlc
 from handlers.spread import start_spread
 from handlers.manager import get_kraken_manager
@@ -39,112 +40,6 @@ async def homepage(request):
     template = "index.html"
     context = {"request": request}
     return templates.TemplateResponse(template, context)
-
-
-class OrderBookWebsocketEndpoint(WebSocketEndpoint):
-    encoding = "json"
-
-    async def on_connect(self, websocket: WebSocket) -> None:
-        await websocket.accept()
-        await start_book(pairs, websocket)
-
-
-class OrdersWebsocketEndpoint(WebSocketEndpoint):
-    encoding = "json"
-
-    async def on_connect(self, websocket: WebSocket) -> None:
-        await websocket.accept()
-        await start_orders(pairs, websocket, config)
-
-
-class OHLCWebsocketEndpoint(WebSocketEndpoint):
-    encoding = "json"
-
-    async def on_connect(self, websocket: WebSocket) -> None:
-        pair = websocket.query_params["pair"]
-        interval = websocket.query_params["interval"]
-        await websocket.accept()
-        await start_ohlc(pair, websocket, config, interval)
-
-
-class TradesWebsocketEndpoint(WebSocketEndpoint):
-    encoding = "json"
-
-    async def on_connect(self, websocket: WebSocket) -> None:
-        await websocket.accept()
-        await start_trades(pairs, websocket, config)
-
-
-class SpreadWebsocketEndpoint(WebSocketEndpoint):
-    encoding = "json"
-
-    async def on_connect(self, websocket: WebSocket) -> None:
-        await websocket.accept()
-        await start_spread(pairs, websocket, config)
-
-
-class OperateWebsocketEndpoint(WebSocketEndpoint):
-    encoding = "json"
-
-    async def add_order(self, data) -> None:
-        ordertype = data["ordertype"] if "ordertype" in data else None
-        side = data["side"] if "side" in data else None
-        pair = data["pair"] if "pair" in data else None
-        volume = data["volume"] if "volume" in data else None
-        price = data["price"] if "price" in data else None
-        leverage = data["leverage"] if "leverage" in data else None
-        reduce_only = data["reduce_only"] if "reduce_only" in data else None
-        if all(v is not None for v in [ordertype, side, pair, volume, price, leverage]):
-            res = kraken_manager.bot.add_order(
-                ordertype, side, pair, price, volume, leverage, reduce_only
-            )
-            return JSONResponse(res)
-        else:
-            logging.error("Not all arguments specified for order creation.")
-
-    async def cancel_order(self, data) -> None:
-        txid = data["id"] if "id" in data else None
-
-        if txid:
-            res = kraken_manager.bot.cancel_pending_order(txid)
-            return JSONResponse(res)
-        else:
-            logging.error("Not all arguments specified for order creation.")
-
-    async def cancel_all_pending_orders(self) -> None:
-        res = kraken_manager.bot.cancel_all_pending_orders()
-        return JSONResponse(res)
-
-    async def on_connect(self, websocket: WebSocket) -> None:
-        await websocket.accept()
-
-    async def parse_and_send_response(self, websocket, res, operation):
-        if res:
-            body = json.loads(res.body)
-            await websocket.send_json(body)
-        else:
-            logger.warning("No response received after {} execution".format(operation))
-
-    async def on_receive(self, websocket: WebSocket, data) -> None:
-        if kraken_manager:
-            operation = data["operation"]
-            if operation:
-                logging.info("Operation {} executed.".format(operation))
-                match operation:
-                    case "add_order":
-                        res = await self.add_order(data)
-                        await self.parse_and_send_response(websocket, res, operation)
-                        return
-
-                    case "cancel_pending_order":
-                        res = await self.cancel_order(data)
-                        await self.parse_and_send_response(websocket, res, operation)
-                        return
-
-                    case "cancel_all_pending_orders":
-                        res = await self.cancel_all_pending_orders()
-                        await self.parse_and_send_response(websocket, res, operation)
-                        return
 
 
 def openapi_schema(request):
@@ -247,20 +142,19 @@ async def list_ohlc(request):
         return JSONResponse([])
 
 
+async def get_kraken_token(request):
+    return JSONResponse(get_token(config))
+
+
 if __name__ == "__main__":
     app = Starlette(
         routes=(
             Route("/", homepage, name="hello"),
-            WebSocketRoute("/ws_orderbook", OrderBookWebsocketEndpoint),
-            WebSocketRoute("/ws_orders", OrdersWebsocketEndpoint),
-            WebSocketRoute("/ws_trades", TradesWebsocketEndpoint),
-            WebSocketRoute("/ws_create", OperateWebsocketEndpoint),
-            WebSocketRoute("/ws_ohlc", OHLCWebsocketEndpoint),
-            WebSocketRoute("/ws_spread", SpreadWebsocketEndpoint),
             Route("/orders", endpoint=list_orders, methods=["GET"]),
             Route("/positions", endpoint=list_positions, methods=["GET"]),
             Route("/ohlc", endpoint=list_ohlc, methods=["GET"]),
             Route("/schema", endpoint=openapi_schema, include_in_schema=False),
+            Route("/token", endpoint=get_kraken_token, methods=["GET"]),
         ),
         middleware=[Middleware(CORSMiddleware, allow_origins=["*"])],
         lifespan=lifespan,

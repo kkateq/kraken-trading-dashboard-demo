@@ -3,7 +3,7 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import WsStatusIcon from "./wsstatusicon";
 import _ from "lodash";
 import useWebSocket from "react-use-websocket";
-import { crc32, parsePrice } from "./utils";
+import { crc32, parsePrice, isObject } from "./utils";
 import Bookview from "./bookview";
 
 type Props = {
@@ -36,7 +36,6 @@ export default function Krakenbook({ pair, depth }: Props) {
   const [krakenWsUrl] = useState("wss://ws.kraken.com/");
   const [channelId, setChannelId] = useState(undefined);
   const [valid, setValid] = useState<boolean>(false);
-  const handleReconnectStop = useCallback(() => sendMessage("Hello"), []);
   const [book, setBook] = useState<BookType>();
 
   const { sendMessage, lastMessage, readyState } = useWebSocket(krakenWsUrl, {
@@ -46,7 +45,6 @@ export default function Krakenbook({ pair, depth }: Props) {
       timeout: 60000, // 1 minute, if no response is received, the connection will be closed
       interval: 25000, // every 25 seconds, a ping message will be sent
     },
-    onReconnectStop: handleReconnectStop,
     shouldReconnect: (closeEvent) => {
       /*
       useWebSocket will handle unmounting for you, but this is an example of a
@@ -74,10 +72,6 @@ export default function Krakenbook({ pair, depth }: Props) {
       didUnmount.current = true;
     };
   }, [depth, sendMessage, pair]);
-
-  const isObject = (value: any) => {
-    return typeof value === "object" && !Array.isArray(value) && value !== null;
-  };
 
   const setupBook = (bs: [UpdateRecord], as: [UpdateRecord]) => {
     const newBook = { bid: {}, ask: {}, checksum: "" };
