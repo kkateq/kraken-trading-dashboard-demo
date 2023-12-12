@@ -14,8 +14,8 @@ export default function Dashboard() {
         </div>
         <div className="flex-1">
           <div className="grid">
-            <Trades />
             <Orders />
+            <Trades />
             <MessageLog />
           </div>
         </div>

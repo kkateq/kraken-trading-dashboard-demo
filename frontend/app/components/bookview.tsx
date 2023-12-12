@@ -1,6 +1,15 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Order, Side, SideType, BookPriceType, BookDataType } from "./commons";
+import {
+  Order,
+  Side,
+  SideType,
+  BookPriceType,
+  BookDataType,
+  PriceDecimals,
+} from "./commons";
+import { Slider } from "@material-tailwind/react";
+import { roundPrice } from "./utils";
 
 type Props = {
   book: BookDataType | undefined;
@@ -8,16 +17,9 @@ type Props = {
 };
 
 const Bookview = ({ book }: Props) => {
-  const {
-    data,
-    depth,
-    ask_volume_total_percentage,
-    bids_volume_total_percentage,
-    pair,
-  } = book || {};
-
-  const bidColor = "blue";
-  const askColor = "pink";
+  const [orderAmount, setOrderAmount] = useState<number>(10);
+  const [scaleInOut, setScaleInOut] = useState<boolean>(true);
+  const { data, depth, pair, peg_price } = book || {};
 
   const getOrderType = (
     side: SideType,
@@ -40,6 +42,18 @@ const Bookview = ({ book }: Props) => {
     }
 
     return undefined;
+  };
+
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setOrderAmount(e.target.value as any);
+  };
+
+  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setOrderAmount(e.target.value as any);
+  };
+
+  const handleScaleInOutChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setScaleInOut(!scaleInOut);
   };
 
   const handleBidClick = (index: number, price: number) => {
@@ -145,15 +159,47 @@ const Bookview = ({ book }: Props) => {
         {book && (
           <>
             <div className="flex flex-col w-full">
-              <div className="space-x-1 mt-1 flex  text-xs">
-                <div className={`text-${bidColor}-800`}>
-                  {bids_volume_total_percentage}%
+              <div className="flex space-x-2 mb-1 mt-1">
+                <input
+                  type="number"
+                  step="0.1"
+                  min="0.001"
+                  id="volume"
+                  value={orderAmount}
+                  onChange={handleAmountChange}
+                  className="text-xs border border-solid border-2 rounded  border-gray-400 pl-2"
+                ></input>
+                <div className="flex items-center">
+                  <Slider
+                    color="green"
+                    size="md"
+                    value={orderAmount}
+                    onChange={handleVolumeChange}
+                    step={0.001}
+                  />
                 </div>
-                <span>-</span>
-                <div className={`text-${askColor}-800`}>
-                  {ask_volume_total_percentage}%
+                <div className="flex h-6 items-center">
+                  <input
+                    type="checkbox"
+                    name="scale"
+                    id="scale"
+                    checked={scaleInOut}
+                    onChange={handleScaleInOutChange}
+                    className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
+                  ></input>
+                </div>
+                <div className="text-sm leading-6">
+                  <label htmlFor="scale" className="font-medium text-gray-900">
+                    Scale in/out
+                  </label>
+                </div>
+                <div className="text-black-600 flex-1">
+                  <div className="text-end text-lg mr-2">
+                    ${roundPrice(orderAmount * peg_price, PriceDecimals[pair])}
+                  </div>
                 </div>
               </div>
+
               <div className="bg-white overflow-hidden flex flex-col h-full border-solid border-2 rounded border-gray-400 p-1">
                 <div className="overflow-auto divide-y">
                   {data.map((x: BookPriceType, i) => (

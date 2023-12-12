@@ -19,6 +19,10 @@ export const Leverage = {
   "MATIC/USD": 4,
 };
 
+export const PriceDecimals = {
+  "MATIC/USD": 4,
+};
+
 export const DefaultVolume = {
   "MATIC/USD": 40,
 };

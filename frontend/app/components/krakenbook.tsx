@@ -37,7 +37,7 @@ export default function Krakenbook({ pair, depth }: Props) {
   const [channelId, setChannelId] = useState(undefined);
   const [valid, setValid] = useState<boolean>(false);
   const [book, setBook] = useState<BookType>();
-
+  const [sortedBook, setSortedBook] = useState(null);
   const { sendMessage, lastMessage, readyState } = useWebSocket(krakenWsUrl, {
     heartbeat: {
       message: "ping",
@@ -309,9 +309,13 @@ export default function Krakenbook({ pair, depth }: Props) {
     };
   };
 
+  useEffect(() => {
+    setSortedBook(getBookSorted());
+  }, [book?.checksum]);
+
   return (
     <div className="h-full ">
-      <Bookview book={getBookSorted()} />
+      <Bookview book={sortedBook} />
       <div className="flex items-center ml-2 space-x-2 text-gray-600 text-xs divide-x">
         <WsStatusIcon readyState={readyState} />
         <h2 className="text-xs">Depth: {depth}</h2> <div>|</div>
@@ -325,6 +329,14 @@ export default function Krakenbook({ pair, depth }: Props) {
         </div>
         <div>|</div>
         <div>Pair: {pair}</div>
+        <div>|</div>
+        <div className={`text-blue-800`}>
+          {sortedBook?.bids_volume_total_percentage}%
+        </div>
+        <span>-</span>
+        <div className={`text-red-800`}>
+          {sortedBook?.ask_volume_total_percentage}%
+        </div>
       </div>
     </div>
   );
