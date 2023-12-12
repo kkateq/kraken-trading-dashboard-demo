@@ -1,18 +1,11 @@
 "use client;";
-import {
-  createContext,
-  useState,
-  useContext,
-  useRef,
-  useCallback,
-  useEffect,
-} from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import WsStatusIcon from "./wsstatusicon";
 import _ from "lodash";
-import useWebSocket, { ReadyState } from "react-use-websocket";
+import useWebSocket from "react-use-websocket";
 import { crc32, parsePrice } from "./utils";
 import Bookview from "./bookview";
-import { testAsks, testBids, checksum } from "./test_checksum";
+
 type Props = {
   pair: string;
   depth: number;
@@ -43,7 +36,6 @@ export default function Krakenbook({ pair, depth }: Props) {
   const [krakenWsUrl] = useState("wss://ws.kraken.com/");
   const [channelId, setChannelId] = useState(undefined);
   const [error, setError] = useState<string | undefined>(undefined);
-  const [resubscribing, setResubscribing] = useState(false);
   const handleReconnectStop = useCallback(() => sendMessage("Hello"), []);
   const [book, setBook] = useState<BookType>();
 
@@ -225,8 +217,7 @@ export default function Krakenbook({ pair, depth }: Props) {
           if (
             _channelId === channelId &&
             _pair === pair &&
-            name === `book-${depth}` &&
-            !resubscribing
+            name === `book-${depth}`
           ) {
             if (
               !book &&
