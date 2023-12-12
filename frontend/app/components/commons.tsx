@@ -64,13 +64,13 @@ export type BookDataType = {
   ask_volume_total_percentage: number;
   bids_volume_total_percentage: number;
   peg_price: number;
-  price_decimals: number;
-  qty_decimals: number;
-  checksum: number;
+  // price_decimals: number;
+  // qty_decimals: number;
+  // checksum: number;
   best_bid: number;
   best_ask: number;
-  large_volume_history: [LargeVolumeHistoryNode];
-  imbalance_history: [ImbalanceHistoryNode];
+  // large_volume_history: [LargeVolumeHistoryNode];
+  // imbalance_history: [ImbalanceHistoryNode];
 };
 
 export type TradeResponseType = {

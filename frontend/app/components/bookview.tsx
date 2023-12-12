@@ -7,44 +7,46 @@ import {
   SideType,
   BookPriceType,
   WATCH_PAIRS,
+  BookDataType,
 } from "./commons";
 import { useKrakenDataContext } from "./kraken_data_provider";
 import ImbalanceChart from "./imbalance";
 
 type Props = {
-  book: object | undefined;
+  book: BookDataType | undefined;
+  addOrder: () => void;
 };
 
 const Bookview = ({ book }: Props) => {
-  const [temporaryOrders, setTemporaryOrders] = useState({});
+  // const [temporaryOrders, setTemporaryOrders] = useState({});
 
-  const {
-    // book,
-    orders,
-    addOrder,
-    selectedPair,
-    setSelectedPair,
-    // priceToTradesTransposed,
-    orderAmount,
-    // roundPrice,
-  } = useKrakenDataContext();
+  // const {
+  //   // book,
+  //   orders,
+  //   addOrder,
+  //   selectedPair,
+  //   setSelectedPair,
+  //   // priceToTradesTransposed,
+  //   orderAmount,
+  //   // roundPrice,
+  // } = useKrakenDataContext();
 
-  useEffect(() => {
-    if (orders.length === 0 && Object.keys(temporaryOrders).length > 0) {
-      setTemporaryOrders({});
-    } else {
-      const newOrders = {};
-      orders.forEach((order) => {
-        newOrders[order.value.descr.price] = {
-          side: order.value.descr.type,
-          type: order.value.vol,
-          vol: orderAmount,
-        };
-      });
+  // useEffect(() => {
+  //   if (orders.length === 0 && Object.keys(temporaryOrders).length > 0) {
+  //     setTemporaryOrders({});
+  //   } else {
+  //     const newOrders = {};
+  //     orders.forEach((order) => {
+  //       newOrders[order.value.descr.price] = {
+  //         side: order.value.descr.type,
+  //         type: order.value.vol,
+  //         vol: orderAmount,
+  //       };
+  //     });
 
-      setTemporaryOrders(newOrders);
-    }
-  }, [orders]);
+  //     setTemporaryOrders(newOrders);
+  //   }
+  // }, [orders]);
 
   const {
     data,
@@ -54,8 +56,8 @@ const Bookview = ({ book }: Props) => {
     ask_volume_total_percentage,
     bids_volume_total_percentage,
     peg_price,
-    large_volume_history,
-    imbalance_history,
+    // large_volume_history,
+    // imbalance_history,
   } = book || {};
 
   const bidColor = "blue";
@@ -85,102 +87,102 @@ const Bookview = ({ book }: Props) => {
   };
 
   const handleBidClick = (index: number, price: number) => {
-    const check = priceToTradesTransposed[price];
-    if (check) {
-      console.log("trade for this price level already exists");
-      return;
-    }
-    const orderType = getOrderType(Side.buy, index, depth);
-    if (orderType) {
-      console.log("OrderType: " + Side.buy + " - " + orderType);
-      setTemporaryOrders((prev) => ({
-        ...prev,
-        [price]: {
-          side: Side.buy,
-          type: orderType,
-          vol: orderAmount,
-        },
-      }));
-      addOrder(orderType as OrderType, Side.buy, price);
-    }
+    // const check = priceToTradesTransposed[price];
+    // if (check) {
+    //   console.log("trade for this price level already exists");
+    //   return;
+    // }
+    // const orderType = getOrderType(Side.buy, index, depth);
+    // if (orderType) {
+    //   console.log("OrderType: " + Side.buy + " - " + orderType);
+    //   setTemporaryOrders((prev) => ({
+    //     ...prev,
+    //     [price]: {
+    //       side: Side.buy,
+    //       type: orderType,
+    //       vol: orderAmount,
+    //     },
+    //   }));
+    //   addOrder(orderType as OrderType, Side.buy, price);
+    // }
   };
 
   const handleAskClick = (index: number, price: number) => {
-    const check = priceToTradesTransposed[price];
-    if (check) {
-      console.log("trade for this price level already exists");
-      return;
-    }
-    const orderType = getOrderType(Side.sell, index, depth);
-    if (orderType) {
-      console.log("OrderType: " + Side.sell + " - " + orderType);
-      setTemporaryOrders((prev) => ({
-        ...prev,
-        [price]: {
-          side: Side.sell,
-          type: orderType,
-          vol: orderAmount,
-        },
-      }));
-      addOrder(orderType as OrderType, Side.sell, price);
-    }
+    // const check = priceToTradesTransposed[price];
+    // if (check) {
+    //   console.log("trade for this price level already exists");
+    //   return;
+    // }
+    // const orderType = getOrderType(Side.sell, index, depth);
+    // if (orderType) {
+    //   console.log("OrderType: " + Side.sell + " - " + orderType);
+    //   setTemporaryOrders((prev) => ({
+    //     ...prev,
+    //     [price]: {
+    //       side: Side.sell,
+    //       type: orderType,
+    //       vol: orderAmount,
+    //     },
+    //   }));
+    //   addOrder(orderType as OrderType, Side.sell, price);
+    // }
   };
 
   const handleBuyMarketClick = (price: number) => {
     console.log("market");
-    addOrder(Order.market, Side.buy, price);
+    // addOrder(Order.market, Side.buy, price);
   };
   const handleSellMarketClick = (price: number) => {
     console.log("market");
-    addOrder(Order.market, Side.sell, price);
+    // addOrder(Order.market, Side.sell, price);
   };
 
   const handlePairChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setSelectedPair(e.target.value as any);
+    // setSelectedPair(e.target.value as any);
   };
 
   const renderPosition = (price: number, renderSide: Side) => {
-    const pos = priceToTradesTransposed[price];
+    // const pos = priceToTradesTransposed[price];
 
-    if (pos) {
-      if (pos.type !== renderSide) {
-        return null;
-      }
-      const currentCost = peg_price * pos.vol;
-      const pl = currentCost - pos.cost;
-      const name = pos.type === "sell" ? "SL" : "BL";
+    // if (pos) {
+    //   if (pos.type !== renderSide) {
+    //     return null;
+    //   }
+    //   const currentCost = peg_price * pos.vol;
+    //   const pl = currentCost - pos.cost;
+    //   const name = pos.type === "sell" ? "SL" : "BL";
 
-      return (
-        <div
-          className={
-            pl > 0
-              ? "flex space-x-1 border-solid border-2 border-green-400 bg-green-200 text-xs"
-              : "flex space-x-1 border-solid border-2 border-red-400 bg-red-200 text-xs"
-          }
-        >
-          <div>
-            {name}|{Math.round(pos.vol)}|{roundPrice(pl)}
-          </div>
-        </div>
-      );
-    }
+    //   return (
+    //     <div
+    //       className={
+    //         pl > 0
+    //           ? "flex space-x-1 border-solid border-2 border-green-400 bg-green-200 text-xs"
+    //           : "flex space-x-1 border-solid border-2 border-red-400 bg-red-200 text-xs"
+    //       }
+    //     >
+    //       <div>
+    //         {name}|{Math.round(pos.vol)}|{roundPrice(pl)}
+    //       </div>
+    //     </div>
+    //   );
+    // }
 
-    const tempOrder = temporaryOrders[price];
-    if (tempOrder) {
-      if (tempOrder.side !== renderSide) {
-        return null;
-      }
+    // const tempOrder = temporaryOrders[price];
+    // if (tempOrder) {
+    //   if (tempOrder.side !== renderSide) {
+    //     return null;
+    //   }
 
-      const name = tempOrder.side === "sell" ? "SL" : "BL";
+    //   const name = tempOrder.side === "sell" ? "SL" : "BL";
 
-      return (
-        <div className="flex pl-2 text-red-400 border-2 border-solid border-red-200 text-xs">
-          <div>
-            O|{name}|{Math.round(tempOrder.vol)}
-          </div>
-        </div>
-      );
-    }
+    //   return (
+    //     <div className="flex pl-2 text-red-400 border-2 border-solid border-red-200 text-xs">
+    //       <div>
+    //         O|{name}|{Math.round(tempOrder.vol)}
+    //       </div>
+    //     </div>
+    //   );
+    // }
 
     return <span></span>;
   };
@@ -190,29 +192,15 @@ const Bookview = ({ book }: Props) => {
       <div className="flex ml-2 w-full mr-2">
         {book && (
           <>
-            <div className="w-full">
+            {/* <div className="w-full">
               <ImbalanceChart
                 imbalanceHistory={imbalance_history}
                 largeVolumeHistory={large_volume_history}
               />
-            </div>
+            </div> */}
             <div className="flex flex-col w-full">
               <div className="space-x-1 mt-1 flex">
-                <div className="bold mr-4">
-                  <div className="flex border-solid border-2 rounded border-gray-400">
-                    <select
-                      id="selectPair"
-                      onChange={handlePairChange}
-                      value={selectedPair}
-                    >
-                      {WATCH_PAIRS.map((v, i) => (
-                        <option value={v} key={i}>
-                          {v}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
+                <div className="bold mr-4"></div>
                 <span className={`w-full text-${bidColor}-800`}>
                   {bid_volume_total}({bids_volume_total_percentage}%)
                 </span>

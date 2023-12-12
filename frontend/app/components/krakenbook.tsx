@@ -10,8 +10,9 @@ import {
 import WsStatusIcon from "./wsstatusicon";
 import _ from "lodash";
 import useWebSocket, { ReadyState } from "react-use-websocket";
+import { crc32, parsePrice } from "./utils";
 import Bookview from "./bookview";
-
+import { testAsks, testBids, checksum } from "./test_checksum";
 type Props = {
   pair: string;
   depth: number;
@@ -25,7 +26,7 @@ export enum Side {
 type BookEntryType = {
   price: string;
   volume: string;
-  timestamp: string;
+  timestamp: number;
   type: Side;
 };
 
@@ -42,35 +43,35 @@ export default function Krakenbook({ pair, depth }: Props) {
   const [krakenWsUrl] = useState("wss://ws.kraken.com/");
   const [channelId, setChannelId] = useState(undefined);
   const [error, setError] = useState<string | undefined>(undefined);
+  const [resubscribing, setResubscribing] = useState(false);
   const handleReconnectStop = useCallback(() => sendMessage("Hello"), []);
-  const [book, setBook] = useState<BookType | undefined>(undefined);
+  const [book, setBook] = useState<BookType>();
 
-  const { sendMessage, lastMessage, lastJsonMessage, readyState } =
-    useWebSocket(krakenWsUrl, {
-      heartbeat: {
-        message: "ping",
-        returnMessage: "pong",
-        timeout: 60000, // 1 minute, if no response is received, the connection will be closed
-        interval: 25000, // every 25 seconds, a ping message will be sent
-      },
-      onReconnectStop: handleReconnectStop,
-      shouldReconnect: (closeEvent) => {
-        /*
+  const { sendMessage, lastMessage, readyState } = useWebSocket(krakenWsUrl, {
+    heartbeat: {
+      message: "ping",
+      returnMessage: "pong",
+      timeout: 60000, // 1 minute, if no response is received, the connection will be closed
+      interval: 25000, // every 25 seconds, a ping message will be sent
+    },
+    onReconnectStop: handleReconnectStop,
+    shouldReconnect: (closeEvent) => {
+      /*
       useWebSocket will handle unmounting for you, but this is an example of a
       case in which you would not want it to automatically reconnect
     */
-        return didUnmount.current === false;
-      },
-      reconnectAttempts: 10,
-      reconnectInterval: 3000,
-      retryOnError: true,
-    });
+      return didUnmount.current === false;
+    },
+    reconnectAttempts: 10,
+    reconnectInterval: 3000,
+    retryOnError: true,
+  });
 
   useEffect(() => {
     sendMessage(
       JSON.stringify({
         event: "subscribe",
-        pair: ["MATIC/USD"],
+        pair: [pair],
         subscription: {
           name: "book",
           depth: depth,
@@ -80,10 +81,34 @@ export default function Krakenbook({ pair, depth }: Props) {
     return () => {
       didUnmount.current = true;
     };
-  }, [depth, sendMessage]);
+  }, [depth, sendMessage, pair]);
 
   const isObject = (value: any) => {
     return typeof value === "object" && !Array.isArray(value) && value !== null;
+  };
+
+  const setupBook = (bs: [UpdateRecord], as: [UpdateRecord]) => {
+    const newBook = { bid: {}, ask: {}, checksum: "" };
+
+    bs.forEach((el: UpdateRecord) => {
+      newBook.bid[el[0]] = {
+        price: el[0],
+        volume: el[1],
+        timestamp: +el[2],
+        type: "bid",
+      };
+    });
+
+    as.forEach((el: UpdateRecord) => {
+      newBook.ask[el[0]] = {
+        price: el[0],
+        volume: el[1],
+        timestamp: +el[2],
+        type: "ask",
+      };
+    });
+
+    setBook(newBook);
   };
 
   const updateBook = useCallback(
@@ -92,41 +117,37 @@ export default function Krakenbook({ pair, depth }: Props) {
       side: Side,
       checksum: string = ""
     ) => {
-      if (!updateList) {
+      if (!updateList || !book || !book?.ask || !book?.bid) {
         return;
       }
 
-      var updatedBook = book ? { ...book } : {};
-      if (!updatedBook[side]) {
-        updatedBook = { ...updateBook, [side]: {} };
-      }
+      var updatedBook = { ...book };
 
       const updateSideObj = updatedBook[side];
       if (updateSideObj) {
         updateList.forEach((el: UpdateRecord) => {
-          const vol = parseFloat(el[1]);
-          const timestamp = parseFloat(el[2]);
-          if (vol > 0) {
-            const prevTimestamp = updateSideObj[el[0]]
-              ? updateSideObj[el[0]].timestamp
-              : null;
-            if (
-              !prevTimestamp ||
-              (prevTimestamp &&
-                parseFloat(prevTimestamp) < parseFloat(timestamp))
-            ) {
-              updateSideObj[el[0]] = {
-                price: el[0],
-                volume: el[1],
-                timestamp: el[2],
-                type: side,
-              };
-            }
-          } else {
-            delete updateSideObj[el[0]];
+          const price = el[0];
+          const vol = +el[1];
+          const timestamp = +el[2];
+          const entry = updateSideObj[price];
+          const entryExists = !!entry;
+
+          if (vol === 0 && entryExists) {
+            delete updateSideObj[price];
+          } else if (
+            !entryExists ||
+            (entryExists && entry.timestamp < timestamp)
+          ) {
+            updateSideObj[price] = {
+              price: price,
+              volume: el[1],
+              timestamp: timestamp,
+              type: side,
+            };
           }
         });
 
+        //@ts-ignore
         setBook((prev: BookType) => ({
           ...(prev || {}),
           [side]: updateSideObj,
@@ -137,83 +158,46 @@ export default function Krakenbook({ pair, depth }: Props) {
     [book]
   );
 
-  const makeCRCTable = () => {
-    var c;
-    var crcTable = [];
-    for (var n = 0; n < 256; n++) {
-      c = n;
-      for (var k = 0; k < 8; k++) {
-        c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
-      }
-      crcTable[n] = c;
+  const reduceTrade = (_book: BookType, side: Side): string => {
+    if (!_book) {
+      return "";
     }
-    return crcTable;
+    const sortedKeys = _.keys(_book[side]).sort(
+      side === Side.ASK
+        ? (a: string, b: string) => +a - +b
+        : (a: string, b: string) => +b - +a
+    );
+    const top_10 = _.slice(sortedKeys, 0, 10);
+    return top_10.reduce((acc, price: string) => {
+      // @ts-ignore
+      if (!acc) {
+        acc = "";
+      }
+
+      const a1 = parsePrice(price);
+      const v1 = parsePrice(_book[side][price].volume);
+      acc = acc + a1 + v1;
+
+      return acc;
+    }, "");
   };
 
-  const crc32 = useCallback((str: string) => {
-    var crcTable = window.crcTable || (window.crcTable = makeCRCTable());
-    var crc = 0 ^ -1;
+  const isBookValid = (b: BookType, checksum: string): boolean => {
+    const res = reduceTrade(b, Side.ASK) + reduceTrade(b, Side.BID);
 
-    for (var i = 0; i < str.length; i++) {
-      crc = (crc >>> 8) ^ crcTable[(crc ^ str.charCodeAt(i)) & 0xff];
-    }
-
-    return (crc ^ -1) >>> 0;
-  }, []);
-
-  const parsePrice = (p: string) => parseInt(p.replace(".", "")).toString();
-
-  const reduceTrade = useCallback(
-    (_book: BookType, side: Side): string => {
-      if (!book) {
-        return "";
-      }
-      const top_10 = _.slice(_.keys(_book[side]), 0, 10);
-      return top_10.reduce((acc, price: string) => {
-        // @ts-ignore
-        if (!acc) {
-          acc = "";
-        }
-
-        const a1 = parsePrice(price);
-        const v1 = parsePrice(_book[side][price].volume);
-        acc = acc + a1 + v1;
-
-        return acc;
-      }, "");
-    },
-    [book]
-  );
-
-  const isBookValid = useCallback(
-    (b: BookType, checksum: string): boolean => {
-      const res = reduceTrade(b, Side.ASK) + reduceTrade(b, Side.BID);
-
-      const p32 = crc32(res);
-      return p32.toString() === checksum;
-    },
-    [crc32, reduceTrade]
-  );
+    const p32 = crc32(res);
+    return p32.toString() === checksum;
+  };
 
   useEffect(() => {
     if (book?.checksum) {
       const isValid = isBookValid(book, book.checksum);
 
       if (!isValid) {
-        setError("Book is invalid. Resubscribing...");
-
-        sendMessage(
-          JSON.stringify({
-            event: "subscribe",
-            pair: ["MATIC/USD"],
-            subscription: {
-              name: "book",
-              depth: depth,
-            },
-          })
-        );
+        setError("Book is invalid");
+        // setChannelId(undefined);
       } else {
-        setError("");
+        setError("Valid");
       }
     }
   }, [book?.checksum]);
@@ -241,7 +225,8 @@ export default function Krakenbook({ pair, depth }: Props) {
           if (
             _channelId === channelId &&
             _pair === pair &&
-            name === `book-${depth}`
+            name === `book-${depth}` &&
+            !resubscribing
           ) {
             if (
               !book &&
@@ -250,13 +235,12 @@ export default function Krakenbook({ pair, depth }: Props) {
               value?.bs &&
               value.bs.length === depth
             ) {
-              updateBook(value?.bs, Side.BID);
-              updateBook(value?.as, Side.ASK);
+              setupBook(value?.bs, value?.as);
             } else {
-              if (value?.b) {
+              if (book && value?.b) {
                 updateBook(value.b, Side.BID, value.c);
               }
-              if (value?.a) {
+              if (book && value?.a) {
                 updateBook(value.a, Side.ASK, value.c);
               }
             }
@@ -266,13 +250,93 @@ export default function Krakenbook({ pair, depth }: Props) {
     }
   }, [lastMessage?.data]);
 
+  const getBookSorted = () => {
+    if (!book) {
+      return null;
+    }
+    const sortedAskKeys = _.keys(book.ask).sort(
+      (a: string, b: string) => +a - +b
+    );
+    const top_asks = _.slice(sortedAskKeys, 0, depth).reverse();
+    var ask_volume = 0;
+
+    const asks_list = top_asks.reduce((acc, price: string) => {
+      // @ts-ignore
+      if (!acc) {
+        acc = [];
+      }
+
+      const element = book.ask[price];
+      if (element) {
+        ask_volume = ask_volume + +element.volume;
+        //@ts-ignore
+        acc.push({
+          bid: "",
+          price: +element.price,
+          ask: Math.round(+element.volume),
+          type: element.type,
+        });
+      }
+
+      return acc;
+    }, []);
+
+    const sortedBidKeys = _.keys(book.bid).sort(
+      (a: string, b: string) => +b - +a
+    );
+    const top_bids = _.slice(sortedBidKeys, 0, depth);
+    var bid_volume = 0;
+    const bids_list = top_bids.reduce((acc, price: string) => {
+      // @ts-ignore
+      if (!acc) {
+        acc = [];
+      }
+
+      const element = book.bid[price];
+      if (element) {
+        bid_volume = bid_volume + +element.volume;
+        //@ts-ignore
+        acc.push({
+          ask: "",
+          price: +element.price,
+          bid: Math.round(+element.volume),
+          type: element.type,
+        });
+      }
+
+      return acc;
+    }, []);
+
+    const ask_volume_total_percentage =
+      (ask_volume / (ask_volume + bid_volume)) * 100;
+
+    const best_bid = +book.bid[top_bids[0]].price;
+    const best_ask = +book.ask[top_asks[top_asks.length - 1]].price;
+
+    const peg_price = (best_ask + best_bid) / 2;
+    return {
+      data: [...asks_list, ...bids_list],
+      depth,
+      ask_volume_total: Math.round(ask_volume),
+      bid_volume_total: Math.round(bid_volume),
+      ask_volume_total_percentage: Math.round(ask_volume_total_percentage),
+      bids_volume_total_percentage: Math.round(
+        100 - ask_volume_total_percentage
+      ),
+      peg_price,
+      pair,
+      best_ask,
+      best_bid,
+    };
+  };
+
   return (
     <div>
-      <div>
+      <div className="flex items-center m-2">
         <WsStatusIcon readyState={readyState} />
-        <div>{error}</div>
+        <div className="text-xs">{error}</div>
       </div>
-      {/* <Bookview book={book} />; */}
+      <Bookview book={getBookSorted()} />;
     </div>
   );
 }

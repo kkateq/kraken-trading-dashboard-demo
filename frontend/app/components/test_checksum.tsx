@@ -1,4 +1,4 @@
-const testAsks = {
+export const testAsks = {
   "0.05005": { price: "0.05005", volume: "0.00000500" },
   "0.05010": { price: "0.05010", volume: "0.00000500" },
   "0.05015": { price: "0.05015", volume: "0.00000500" },
@@ -10,7 +10,7 @@ const testAsks = {
   "0.05045": { price: "0.05045", volume: "0.00000500" },
   "0.05050": { price: "0.05050", volume: "0.00000500" },
 };
-const testBids = {
+export const testBids = {
   "0.05000": { price: "0.05000", volume: "0.00000500" },
   "0.04995": { price: "0.04995", volume: "0.00000500" },
   "0.04990": { price: "0.04990", volume: "0.00000500" },
@@ -47,3 +47,5 @@ const testBidKeys = [
   "0.04955",
   "0.04950",
 ];
+
+export const checksum = "974947235";
