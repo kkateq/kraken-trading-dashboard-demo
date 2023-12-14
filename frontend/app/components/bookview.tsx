@@ -7,19 +7,30 @@ import {
   BookPriceType,
   BookDataType,
   PriceDecimals,
+  OrderType,
 } from "./commons";
 import { Slider } from "@material-tailwind/react";
 import { roundPrice } from "./utils";
+import { useKrakenDataContext } from "./kraken_data_provider";
 
 type Props = {
   book: BookDataType | undefined;
-  addOrder: () => void;
+  addOrder: (
+    type: OrderType,
+    side: SideType,
+    volume: number,
+    pair: string,
+    scaleInOut: boolean,
+    price: number
+  ) => void;
 };
 
-const Bookview = ({ book }: Props) => {
+const Bookview = ({ book, addOrder }: Props) => {
   const [orderAmount, setOrderAmount] = useState<number>(10);
   const [scaleInOut, setScaleInOut] = useState<boolean>(true);
   const { data, depth, pair, peg_price } = book || {};
+  const { priceToTradesTransposed, orders } = useKrakenDataContext();
+  const [temporaryOrders, setTemporaryOrders] = useState({});
 
   const getOrderType = (
     side: SideType,
@@ -44,6 +55,23 @@ const Bookview = ({ book }: Props) => {
     return undefined;
   };
 
+  useEffect(() => {
+    if (orders.length === 0 && Object.keys(temporaryOrders).length > 0) {
+      setTemporaryOrders({});
+    } else {
+      const newOrders = {};
+      orders.forEach((order) => {
+        newOrders[order.value.descr.price] = {
+          side: order.value.descr.type,
+          type: order.value.vol,
+          vol: orderAmount,
+        };
+      });
+
+      setTemporaryOrders(newOrders);
+    }
+  }, [orders]);
+
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setOrderAmount(e.target.value as any);
   };
@@ -57,98 +85,117 @@ const Bookview = ({ book }: Props) => {
   };
 
   const handleBidClick = (index: number, price: number) => {
-    // const check = priceToTradesTransposed[price];
-    // if (check) {
-    //   console.log("trade for this price level already exists");
-    //   return;
-    // }
-    // const orderType = getOrderType(Side.buy, index, depth);
-    // if (orderType) {
-    //   console.log("OrderType: " + Side.buy + " - " + orderType);
-    //   setTemporaryOrders((prev) => ({
-    //     ...prev,
-    //     [price]: {
-    //       side: Side.buy,
-    //       type: orderType,
-    //       vol: orderAmount,
-    //     },
-    //   }));
-    //   addOrder(orderType as OrderType, Side.buy, price);
-    // }
+    const check = priceToTradesTransposed[price];
+    if (check) {
+      console.log("trade for this price level already exists");
+      return;
+    }
+    const orderType = getOrderType(Side.buy, index, depth);
+    if (orderType) {
+      console.log("OrderType: " + Side.buy + " - " + orderType);
+      setTemporaryOrders((prev) => ({
+        ...prev,
+        [price]: {
+          side: Side.buy,
+          type: orderType,
+          vol: orderAmount,
+        },
+      }));
+      addOrder(
+        orderType as OrderType,
+        Side.buy,
+        orderAmount,
+        pair,
+        scaleInOut,
+        price
+      );
+    }
   };
 
   const handleAskClick = (index: number, price: number) => {
-    // const check = priceToTradesTransposed[price];
-    // if (check) {
-    //   console.log("trade for this price level already exists");
-    //   return;
-    // }
-    // const orderType = getOrderType(Side.sell, index, depth);
-    // if (orderType) {
-    //   console.log("OrderType: " + Side.sell + " - " + orderType);
-    //   setTemporaryOrders((prev) => ({
-    //     ...prev,
-    //     [price]: {
-    //       side: Side.sell,
-    //       type: orderType,
-    //       vol: orderAmount,
-    //     },
-    //   }));
-    //   addOrder(orderType as OrderType, Side.sell, price);
-    // }
+    const check = priceToTradesTransposed[price];
+    if (check) {
+      console.log("trade for this price level already exists");
+      return;
+    }
+    const orderType = getOrderType(Side.sell, index, depth);
+    if (orderType) {
+      console.log("OrderType: " + Side.sell + " - " + orderType);
+      setTemporaryOrders((prev) => ({
+        ...prev,
+        [price]: {
+          side: Side.sell,
+          type: orderType,
+          vol: orderAmount,
+        },
+      }));
+
+      addOrder(
+        orderType as OrderType,
+        Side.sell,
+        orderAmount,
+        pair,
+        scaleInOut,
+        price
+      );
+    }
   };
 
   const handleBuyMarketClick = (price: number) => {
-    console.log("market");
-    // addOrder(Order.market, Side.buy, price);
+    addOrder(Order.market, Side.buy, orderAmount, pair, scaleInOut, price);
   };
   const handleSellMarketClick = (price: number) => {
-    console.log("market");
-    // addOrder(Order.market, Side.sell, price);
+    addOrder(Order.market, Side.sell, orderAmount, pair, scaleInOut, price);
   };
 
   const renderPosition = (price: number, renderSide: Side) => {
-    // const pos = priceToTradesTransposed[price];
+    const pos = priceToTradesTransposed[price];
 
-    // if (pos) {
-    //   if (pos.type !== renderSide) {
-    //     return null;
-    //   }
-    //   const currentCost = peg_price * pos.vol;
-    //   const pl = currentCost - pos.cost;
-    //   const name = pos.type === "sell" ? "SL" : "BL";
+    if (pos) {
+      if (pos.type !== renderSide) {
+        return null;
+      }
+      const currentCost = peg_price * pos.vol;
+      const pl = currentCost - pos.cost;
+      const name = pos.type === "sell" ? "SL" : "BL";
 
-    //   return (
-    //     <div
-    //       className={
-    //         pl > 0
-    //           ? "flex space-x-1 border-solid border-2 border-green-400 bg-green-200 text-xs"
-    //           : "flex space-x-1 border-solid border-2 border-red-400 bg-red-200 text-xs"
-    //       }
-    //     >
-    //       <div>
-    //         {name}|{Math.round(pos.vol)}|{roundPrice(pl)}
-    //       </div>
-    //     </div>
-    //   );
-    // }
+      return (
+        <div
+          className={
+            pl > 0
+              ? "flex space-x-1 border-solid border-2 border-green-400 bg-green-200 text-xs"
+              : "flex space-x-1 border-solid border-2 border-red-400 bg-red-200 text-xs"
+          }
+        >
+          <div>
+            {name}|{Math.round(pos.vol)}|{roundPrice(pl)}
+          </div>
+        </div>
+      );
+    }
 
-    // const tempOrder = temporaryOrders[price];
-    // if (tempOrder) {
-    //   if (tempOrder.side !== renderSide) {
-    //     return null;
-    //   }
+    const tempOrder = temporaryOrders[price];
+    if (tempOrder) {
+      if (tempOrder.side !== renderSide) {
+        return null;
+      }
 
-    //   const name = tempOrder.side === "sell" ? "SL" : "BL";
+      const name = tempOrder.side === "sell" ? "SL" : "BL";
 
-    //   return (
-    //     <div className="flex pl-2 text-red-400 border-2 border-solid border-red-200 text-xs">
-    //       <div>
-    //         O|{name}|{Math.round(tempOrder.vol)}
-    //       </div>
-    //     </div>
-    //   );
-    // }
+      return (
+        <div
+          className={
+            name === "SL"
+              ? "flex pl-2 text-red-400 border-2 border-solid border-red-200 text-xs"
+              : "flex pl-2 text-blue-400 border-2 border-solid border-blue-200 text-xs"
+          }
+        >
+          <div>
+            O|{name}|{Math.round(tempOrder.vol)}
+          </div>
+        </div>
+      );
+    }
 
     return <span></span>;
   };

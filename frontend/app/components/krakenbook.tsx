@@ -5,6 +5,7 @@ import _ from "lodash";
 import useWebSocket from "react-use-websocket";
 import { crc32, parsePrice, isObject } from "./utils";
 import Bookview from "./bookview";
+import { OrderType, SideType } from "./commons";
 
 type Props = {
   pair: string;
@@ -313,9 +314,24 @@ export default function Krakenbook({ pair, depth }: Props) {
     setSortedBook(getBookSorted());
   }, [book?.checksum]);
 
+  const addOrder = (
+    type: OrderType,
+    side: SideType,
+    volume: number,
+    pair: string,
+    scaleInOut: boolean,
+    price: number
+  ) => {
+    console.log(
+      `${side} ${volume} of ${pair} @ ${price} by ${type} order [${
+        scaleInOut ? "reduce only" : ""
+      }]]`
+    );
+  };
+
   return (
     <div className="h-full ">
-      <Bookview book={sortedBook} />
+      <Bookview book={sortedBook} addOrder={addOrder} />
       <div className="flex items-center ml-2 space-x-2 text-gray-600 text-xs divide-x">
         <WsStatusIcon readyState={readyState} />
         <h2 className="text-xs">Depth: {depth}</h2> <div>|</div>
