@@ -1,12 +1,9 @@
 import logging
 import contextlib
-import json
 from starlette.applications import Starlette
-from starlette.endpoints import WebSocketEndpoint
-from datetime import datetime
-from starlette.routing import Route, WebSocketRoute
+
+from starlette.routing import Route
 from starlette.middleware import Middleware
-from starlette.websockets import WebSocket
 from starlette.templating import Jinja2Templates
 from handlers.orderbook import start_book
 from handlers.orders import start_orders
@@ -20,7 +17,7 @@ from starlette.config import Config
 from starlette.schemas import SchemaGenerator
 from starlette.responses import JSONResponse
 from starlette.middleware.cors import CORSMiddleware
-from datetime import datetime
+
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -31,7 +28,7 @@ schemas = SchemaGenerator(
     {"openapi": "3.0.0", "info": {"title": "Alpha API", "version": "1.0"}}
 )
 
-pairs = ["MATIC/USD"]
+pairs = ["BTC/USD"]
 
 kraken_manager = None
 
@@ -164,6 +161,7 @@ if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
 
 
+# For debugging from VSCode
 # app = Starlette(
 #     routes=(
 #         Route("/", homepage, name="hello"),

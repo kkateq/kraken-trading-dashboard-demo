@@ -4,11 +4,15 @@
     <title>Chat</title>
   </head>
   <body>
-    <h1>WebSocket Chat</h1>
-    <form action="" onsubmit="sendMessage(event)">
-      <input type="text" id="messageText" autocomplete="off" />
-    </form>
-    <ul id="messages"></ul>
+    <h1>Say hello to the Kraken API proxy server</h1>
+    <h2>Available endpoints</h2>
+    <ul>
+      <li><a href="/orders">/orders</a></li>
+      <li><a href="/positions">/positions</a></li>
+      <li><a href="/ohlc">/ohlc</a></li>
+      <li><a href="/schema">/schema</a></li>
+      <li><a href="/token">/token</a></li>
+    </ul>
     <script>
       var ws = new WebSocket("ws://localhost:8000/ws_orderbook");
       ws.onmessage = function (event) {

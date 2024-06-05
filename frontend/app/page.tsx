@@ -1,6 +1,6 @@
 "use client";
 
-import Dashboard from "./components/dashboard";
+import Dashboard from "./components/krakendashboard";
 
 export default function Home() {
   return (

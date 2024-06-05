@@ -4,8 +4,9 @@ import hashlib
 import hmac
 import uuid
 
-api_key = "bHX1fkSPFxdbgdwpsu"
-secret_key = "554nPbYQUZcHx5F59iwP4x4YhJu0fLLTz13l"
+# Test implementation
+api_key = "XYZ"
+secret_key = "XYZ"
 httpClient = requests.Session()
 recv_window = str(5000)
 url = "https://api.bybit.com"  # Testnet endpoint
